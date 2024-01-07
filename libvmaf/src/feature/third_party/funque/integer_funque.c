@@ -127,6 +127,13 @@ typedef struct IntFunqueState
     double vif_kernelscale;
     uint32_t log_18[262144];
     uint32_t log_22[4194304];
+#if STRRED_10bit_LUT
+    // 8 pending division factors (3 to 11)
+    // 21 shift factors -> var_x has max 31 bits. After taking best 10bits, it can have value upto 21
+    // 1024 -> 10 bit look up table
+    // 2 -> entropy and scale log look ups
+    uint32_t log_lut[8*21*1024*2];
+#endif
 
     // ADM extra variables
     double adm_enhn_gain_limit;
@@ -672,6 +679,9 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     div_lookup_generator(s->adm_div_lookup);
     strred_funque_log_generate(s->log_18);
     strred_funque_generate_log22(s->log_22);
+#if STRRED_10bit_LUT
+    gen_funque_strred_log10bit(s->log_lut);
+#endif
 
     return 0;
 
@@ -1037,7 +1047,12 @@ static int extract(VmafFeatureExtractor *fex,
                     &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &s->i_prev_ref[level],
                     &s->i_prev_dist[level], s->i_ref_dwt2out[level].width,
                     s->i_ref_dwt2out[level].height, &s->strred_scores, BLOCK_SIZE, level, s->log_18,
-                    s->log_22, strred_pending_div, (double) 0.1, s->enable_spatial_csf);
+#if STRRED_10bit_LUT
+                    s->log_lut,
+#else
+                    s->log_22, 
+#endif
+                    strred_pending_div, (double) 0.1, s->enable_spatial_csf);
 
                 err |= s->modules.integer_copy_prev_frame_strred_funque(
                     &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &s->i_prev_ref[level],

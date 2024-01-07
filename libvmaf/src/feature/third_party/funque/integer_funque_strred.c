@@ -38,6 +38,31 @@ void strred_funque_log_generate(uint32_t *log_18)
     }
 }
 
+#if STRRED_10bit_LUT
+void gen_funque_strred_log10bit(uint32_t *log_lut)
+{
+    int16_t i;
+    for (int pend_idx=0; pend_idx<8; pend_idx++)
+    {
+        for (int shift_idx=0; shift_idx<21; shift_idx++)
+        {
+            for (int i=0; i<1024; i++)
+            {
+                int64_t div_fac = 255 * 255 * 81 * (1 << (2 * pend_idx));
+                int64_t sigma_nsq = 0.1 * div_fac;
+                int64_t const_val = div_fac;
+                int32_t inp_var = i << shift_idx;
+                int64_t inp_entr_log = sigma_nsq + inp_var;
+                int64_t inp_scale_log = const_val + inp_var;
+                int idx_val = pend_idx * 21 * 1024 * 2 + shift_idx * 1024 * 2 + 2 * i;
+                log_lut[idx_val] = (uint32_t) round(log2((double) inp_entr_log) * (1 << STRRED_Q_FORMAT));
+                log_lut[idx_val + 1] = (uint32_t) round(log2((double) inp_scale_log) * (1 << STRRED_Q_FORMAT));
+            }   
+        }
+    }
+}
+#endif
+
 void strred_funque_generate_log22(uint32_t *log_22)
 {
     uint64_t i;

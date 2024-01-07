@@ -27,6 +27,8 @@
 
 #define LOGE_BASE2 1.442684682
 
+#define STRRED_10bit_LUT 1
+
 int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     const struct i_dwt2buffers *dist,
                                     struct i_dwt2buffers *prev_ref, struct i_dwt2buffers *prev_dist,
@@ -47,6 +49,18 @@ void integer_subract_subbands_c(const dwt2_dtype *ref_src, const dwt2_dtype *ref
                                 size_t height);
 
 void strred_funque_generate_log22(uint32_t *log_22);
+
+#if STRRED_10bit_LUT
+static inline int16_t get_best_i10_from_i32(uint32_t temp, int *x)
+{
+    assert(temp >= 0x400);
+    int k = __builtin_clz(temp);    //built in for intel
+    k = 22 - k;
+    temp = (temp + (1 << (k - 1))) >> k;
+    *x = k;
+    return temp;
+}
+#endif
 
 FORCE_INLINE inline uint32_t strred_get_best_u22_from_u64(uint64_t temp, int *x)
 {
@@ -342,6 +356,18 @@ static inline float strred_horz_integralsum_wavelet(
         var_x = (var_x < 0) ? 0 : var_x;
         var_y = (var_y < 0) ? 0 : var_y;
 
+#if STRRED_10bit_LUT
+        int *vx, *vy; 
+        int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
+        int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vx * 1024 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vy * 1024 * 2 + 2 * var_y_10bit;
+        entropy_x = log_22[x_idx] + entr_const;
+        entropy_y = log_22[y_idx] + entr_const;
+
+        scale_x = log_22[x_idx + 1];
+        scale_y = log_22[y_idx + 1];
+#else
         mul_x = (uint64_t) (var_x + sigma_nsq);
         mul_y = (uint64_t) (var_y + sigma_nsq);
         e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
@@ -355,7 +381,7 @@ static inline float strred_horz_integralsum_wavelet(
         s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
-
+#endif
         entropy_x = entropy_x - sub_val;
         entropy_y = entropy_y - sub_val;
         scale_x = scale_x - sub_val;
