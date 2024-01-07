@@ -42,7 +42,7 @@ void strred_funque_log_generate(uint32_t *log_18)
 void gen_funque_strred_log10bit(uint32_t *log_lut)
 {
     int16_t i;
-    for (int pend_idx=0; pend_idx<8; pend_idx++)
+    for (int pend_idx=0; pend_idx<9; pend_idx++)
     {
         for (int shift_idx=0; shift_idx<21; shift_idx++)
         {

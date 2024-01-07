@@ -128,11 +128,11 @@ typedef struct IntFunqueState
     uint32_t log_18[262144];
     uint32_t log_22[4194304];
 #if STRRED_10bit_LUT
-    // 8 pending division factors (3 to 11)
+    // 9 pending division factors (3 to 11 including both)
     // 21 shift factors -> var_x has max 31 bits. After taking best 10bits, it can have value upto 21
     // 1024 -> 10 bit look up table
     // 2 -> entropy and scale log look ups
-    uint32_t log_lut[8*21*1024*2];
+    uint32_t log_lut[9*21*1024*2];
 #endif
 
     // ADM extra variables
