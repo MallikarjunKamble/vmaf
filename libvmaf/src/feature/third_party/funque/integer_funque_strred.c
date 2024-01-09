@@ -39,7 +39,7 @@ void strred_funque_log_generate(uint32_t *log_18)
 }
 
 #if STRRED_10bit_LUT
-void gen_funque_strred_log10bit(uint32_t *log_lut)
+void gen_funque_strred_log10bit(uint64_t *log_lut)
 {
     int16_t i;
     for (int pend_idx=0; pend_idx<9; pend_idx++)
@@ -55,8 +55,8 @@ void gen_funque_strred_log10bit(uint32_t *log_lut)
                 int64_t inp_entr_log = sigma_nsq + inp_var;
                 int64_t inp_scale_log = const_val + inp_var;
                 int idx_val = pend_idx * 21 * 1024 * 2 + shift_idx * 1024 * 2 + 2 * i;
-                log_lut[idx_val] = (uint32_t) round(log2((double) inp_entr_log) * (1 << STRRED_Q_FORMAT));
-                log_lut[idx_val + 1] = (uint32_t) round(log2((double) inp_scale_log) * (1 << STRRED_Q_FORMAT));
+                log_lut[idx_val] = (uint64_t) round(log2((double) inp_entr_log) * (1 << STRRED_Q_FORMAT));
+                log_lut[idx_val + 1] = (uint64_t) round(log2((double) inp_scale_log) * (1 << STRRED_Q_FORMAT));
             }   
         }
     }
@@ -147,7 +147,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     struct i_dwt2buffers *prev_ref, struct i_dwt2buffers *prev_dist,
                                     size_t width, size_t height,
                                     struct strred_results *strred_scores, int block_size, int level,
-                                    uint32_t *log_18, uint32_t *log_22, int32_t shift_val_arg,
+                                    uint32_t *log_18, uint64_t *log_22, int32_t shift_val_arg,
                                     double sigma_nsq_t, uint8_t check_enable_spatial_csf)
 {
     int ret;

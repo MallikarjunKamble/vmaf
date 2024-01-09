@@ -132,7 +132,7 @@ typedef struct IntFunqueState
     // 21 shift factors -> var_x has max 31 bits. After taking best 10bits, it can have value upto 21
     // 1024 -> 10 bit look up table
     // 2 -> entropy and scale log look ups
-    uint32_t log_lut[9*21*1024*2];
+    uint64_t log_lut[9*21*1024*2];
 #endif
 
     // ADM extra variables

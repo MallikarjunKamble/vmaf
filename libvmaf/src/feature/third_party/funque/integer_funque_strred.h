@@ -16,6 +16,7 @@
  *
  */
 
+#include <assert.h>
 #include "funque_global_options.h"
 #include "funque_strred_options.h"
 
@@ -27,8 +28,17 @@
 
 #define LOGE_BASE2 1.442684682
 
-#define STRRED_10bit_LUT 1
 
+
+#if STRRED_10bit_LUT
+int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
+                                    const struct i_dwt2buffers *dist,
+                                    struct i_dwt2buffers *prev_ref, struct i_dwt2buffers *prev_dist,
+                                    size_t width, size_t height,
+                                    struct strred_results *strred_scores, int block_size, int level,
+                                    uint32_t *log_18, uint64_t *log_22, int32_t shift_val,
+                                    double sigma_nsq_t, uint8_t enable_spatial_csf);
+#else
 int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     const struct i_dwt2buffers *dist,
                                     struct i_dwt2buffers *prev_ref, struct i_dwt2buffers *prev_dist,
@@ -36,6 +46,8 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     struct strred_results *strred_scores, int block_size, int level,
                                     uint32_t *log_18, uint32_t *log_22, int32_t shift_val,
                                     double sigma_nsq_t, uint8_t enable_spatial_csf);
+#endif
+
 
 int integer_copy_prev_frame_strred_funque_c(const struct i_dwt2buffers *ref,
                                             const struct i_dwt2buffers *dist,
@@ -53,11 +65,18 @@ void strred_funque_generate_log22(uint32_t *log_22);
 #if STRRED_10bit_LUT
 static inline int16_t get_best_i10_from_i32(uint32_t temp, int *x)
 {
-    assert(temp >= 0x400);
-    int k = __builtin_clz(temp);    //built in for intel
-    k = 22 - k;
-    temp = (temp + (1 << (k - 1))) >> k;
-    *x = k;
+    //assert(temp >= 0x400);
+    if(temp >= 0x400)
+    {
+        *x = 0;
+    }
+    else
+    {
+        int k = __builtin_clz(temp);    //built in for intel
+        k = 22 - k;
+        temp = (temp + (1 << (k - 1))) >> k;
+        *x = k;
+    }
     return temp;
 }
 #endif
@@ -88,7 +107,7 @@ FORCE_INLINE inline uint32_t strred_get_best_u22_from_u64(uint64_t temp, int *x)
 
 static inline float strred_horz_integralsum_spatial_csf(
     int kw, int width_p1, int16_t knorm_fact, int16_t knorm_shift, uint32_t entr_const,
-    double sigma_nsq_arg, uint32_t *log_18, uint32_t *log_22, int32_t *interim_1_x,
+    double sigma_nsq_arg, uint32_t *log_18, uint64_t *log_22, int32_t *interim_1_x,
     int64_t *interim_2_x, int32_t *interim_1_y, int64_t *interim_2_y, uint8_t enable_temporal,
     float *spat_scales_x, float *spat_scales_y, int32_t spat_row_idx, int32_t pending_div_fac)
 {
@@ -145,6 +164,18 @@ static inline float strred_horz_integralsum_spatial_csf(
         var_x = (var_x < 0) ? 0 : var_x;
         var_y = (var_y < 0) ? 0 : var_y;
 
+#if STRRED_10bit_LUT
+        int vx, vy; 
+        int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
+        int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vx * 1024 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vy * 1024 * 2 + 2 * var_y_10bit;
+        entropy_x = log_22[x_idx] + entr_const;
+        entropy_y = log_22[y_idx] + entr_const;
+
+        scale_x = log_22[x_idx + 1];
+        scale_y = log_22[y_idx + 1];
+#else
         mul_x = (uint64_t) (var_x + sigma_nsq);
         mul_y = (uint64_t) (var_y + sigma_nsq);
         e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
@@ -158,160 +189,7 @@ static inline float strred_horz_integralsum_spatial_csf(
         s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
-
-        entropy_x = entropy_x - sub_val;
-        entropy_y = entropy_y - sub_val;
-        scale_x = scale_x - sub_val;
-        scale_y = scale_y - sub_val;
-
-        fentropy_x = (float) entropy_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-        fentropy_y = (float) entropy_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-        fscale_x = (float) scale_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-        fscale_y = (float) scale_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-
-        if(enable_temporal == 1) {
-            aggregate += fabs(fentropy_x * fscale_x * spat_scales_x[spat_row_idx] -
-                              fentropy_y * fscale_y * spat_scales_y[spat_row_idx]);
-        } else {
-            spat_scales_x[spat_row_idx] = fscale_x;
-            spat_scales_y[spat_row_idx] = fscale_y;
-            aggregate += fabs(fentropy_x * fscale_x - fentropy_y * fscale_y);
-        }
-    }
-
-    /**
-     * The score needs to be calculated for kw column as well,
-     * whose interim result calc is different from rest of the columns,
-     * hence calling strred_calc_entropy_scale for kw column separately
-     */
-
-    // Similar to prev loop, but previous kw col interim metric sum is subtracted
-    for(int j = kw + 1; j < width_p1; j++) {
-        int_1_x = interim_1_x[j] + int_1_x - interim_1_x[j - kw];
-        int_1_y = interim_1_y[j] + int_1_y - interim_1_y[j - kw];
-        int_2_x = interim_2_x[j] + int_2_x - interim_2_x[j - kw];
-        int_2_y = interim_2_y[j] + int_2_y - interim_2_y[j - kw];
-
-        mx = int_1_x;
-        my = int_1_y;
-        var_x = ((int_2_x - (((int64_t) mx * mx * knorm_fact) >> knorm_shift)) +
-                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
-                VARIANCE_SHIFT_FACTOR;
-        var_y = ((int_2_y - (((int64_t) my * my * knorm_fact) >> knorm_shift)) +
-                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
-                VARIANCE_SHIFT_FACTOR;
-        var_x = (var_x < 0) ? 0 : var_x;
-        var_y = (var_y < 0) ? 0 : var_y;
-
-        mul_x = (uint64_t) (var_x + sigma_nsq);
-        mul_y = (uint64_t) (var_y + sigma_nsq);
-        e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
-        e_look_y = strred_get_best_u22_from_u64((uint64_t) mul_y, &ey);
-        entropy_x = log_22[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
-        entropy_y = log_22[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
-
-        add_x = (uint64_t) ((var_x + const_val));
-        add_y = (uint64_t) ((var_y + const_val));
-        s_look_x = strred_get_best_u22_from_u64((uint64_t) add_x, &sx);
-        s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
-        scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
-        scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
-
-        entropy_x = entropy_x - sub_val;
-        entropy_y = entropy_y - sub_val;
-        scale_x = scale_x - sub_val;
-        scale_y = scale_y - sub_val;
-
-        fentropy_x = (float) entropy_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-        fentropy_y = (float) entropy_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-        fscale_x = (float) scale_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-        fscale_y = (float) scale_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
-
-        if(enable_temporal == 1) {
-            aggregate += fabs(fentropy_x * fscale_x * spat_scales_x[spat_row_idx + j - kw] -
-                              fentropy_y * fscale_y * spat_scales_y[spat_row_idx + j - kw]);
-        } else {
-            spat_scales_x[spat_row_idx + j - kw] = fscale_x;
-            spat_scales_y[spat_row_idx + j - kw] = fscale_y;
-            aggregate += fabs(fentropy_x * fscale_x - fentropy_y * fscale_y);
-        }
-    }
-    return aggregate;
-}
-
-static inline float strred_horz_integralsum_wavelet(
-    int kw, int width_p1, int16_t knorm_fact, int16_t knorm_shift, uint32_t entr_const,
-    double sigma_nsq_arg, uint32_t *log_18, uint32_t *log_22, int32_t *interim_1_x,
-    int64_t *interim_2_x, int32_t *interim_1_y, int64_t *interim_2_y, uint8_t enable_temporal,
-    float *spat_scales_x, float *spat_scales_y, int32_t spat_row_idx, int32_t pending_div_fac)
-{
-    int32_t int_1_x, int_1_y;
-    int64_t int_2_x, int_2_y;
-    int32_t mx, my;
-    int32_t var_x, var_y;
-
-    // 1st column vals are 0, hence intialising to 0
-    int_1_x = 0;
-    int_1_y = 0;
-    int_2_x = 0;
-    int_2_y = 0;
-
-    /**
-     * The horizontal accumulation similar to vertical accumulation
-     * metric_sum = prev_col_metric_sum + interim_metric_vertical_sum
-     * The previous kw col interim metric sum is not subtracted since it is not available here
-     */
-
-    int64_t mul_x, mul_y;
-    int64_t add_x, add_y;
-    int ex, ey, sx, sy;
-    uint32_t e_look_x, e_look_y;
-    uint32_t s_look_x, s_look_y;
-    int64_t entropy_x, entropy_y, scale_x, scale_y;
-
-    float fentropy_x, fentropy_y, fscale_x, fscale_y;
-    float aggregate = 0;
-
-    int32_t pending_div_minus_var_fac = pending_div_fac - VARIANCE_SHIFT_FACTOR;
-    int64_t div_fac = (int64_t) (1 << pending_div_minus_var_fac) * 255 * 255 * 81;
-    uint64_t sigma_nsq = div_fac * sigma_nsq_arg;
-    uint64_t const_val = div_fac;
-    int64_t sub_val =
-        (int64_t) ((log2(255.0 * 255 * 81) + pending_div_minus_var_fac) * TWO_POWER_Q_FACTOR);
-
-    for(int j = 1; j < kw + 1; j++) {
-        int_1_x = interim_1_x[j] + int_1_x;
-        int_1_y = interim_1_y[j] + int_1_y;
-        int_2_x = interim_2_x[j] + int_2_x;
-        int_2_y = interim_2_y[j] + int_2_y;
-    }
-
-    {
-        mx = int_1_x;
-        my = int_1_y;
-        var_x = ((int_2_x - (((int64_t) mx * mx * knorm_fact) >> knorm_shift)) +
-                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
-                VARIANCE_SHIFT_FACTOR;
-        var_y = ((int_2_y - (((int64_t) my * my * knorm_fact) >> knorm_shift)) +
-                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
-                VARIANCE_SHIFT_FACTOR;
-        var_x = (var_x < 0) ? 0 : var_x;
-        var_y = (var_y < 0) ? 0 : var_y;
-
-        mul_x = (uint64_t) (var_x + sigma_nsq);
-        mul_y = (uint64_t) (var_y + sigma_nsq);
-        e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
-        e_look_y = strred_get_best_u22_from_u64((uint64_t) mul_y, &ey);
-        entropy_x = log_22[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
-        entropy_y = log_22[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
-
-        add_x = (uint64_t) (var_x + const_val);
-        add_y = (uint64_t) (var_y + const_val);
-        s_look_x = strred_get_best_u22_from_u64((uint64_t) add_x, &sx);
-        s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
-        scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
-        scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
-
+#endif
         entropy_x = entropy_x - sub_val;
         entropy_y = entropy_y - sub_val;
         scale_x = scale_x - sub_val;
@@ -357,7 +235,184 @@ static inline float strred_horz_integralsum_wavelet(
         var_y = (var_y < 0) ? 0 : var_y;
 
 #if STRRED_10bit_LUT
-        int *vx, *vy; 
+        int vx, vy; 
+        int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
+        int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vx * 1024 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vy * 1024 * 2 + 2 * var_y_10bit;
+        entropy_x = log_22[x_idx] + entr_const;
+        entropy_y = log_22[y_idx] + entr_const;
+
+        scale_x = log_22[x_idx + 1];
+        scale_y = log_22[y_idx + 1];
+#else
+        mul_x = (uint64_t) (var_x + sigma_nsq);
+        mul_y = (uint64_t) (var_y + sigma_nsq);
+        e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
+        e_look_y = strred_get_best_u22_from_u64((uint64_t) mul_y, &ey);
+        entropy_x = log_22[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
+        entropy_y = log_22[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
+
+        add_x = (uint64_t) ((var_x + const_val));
+        add_y = (uint64_t) ((var_y + const_val));
+        s_look_x = strred_get_best_u22_from_u64((uint64_t) add_x, &sx);
+        s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
+        scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
+        scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#endif
+        entropy_x = entropy_x - sub_val;
+        entropy_y = entropy_y - sub_val;
+        scale_x = scale_x - sub_val;
+        scale_y = scale_y - sub_val;
+
+        fentropy_x = (float) entropy_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+        fentropy_y = (float) entropy_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+        fscale_x = (float) scale_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+        fscale_y = (float) scale_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+
+        if(enable_temporal == 1) {
+            aggregate += fabs(fentropy_x * fscale_x * spat_scales_x[spat_row_idx + j - kw] -
+                              fentropy_y * fscale_y * spat_scales_y[spat_row_idx + j - kw]);
+        } else {
+            spat_scales_x[spat_row_idx + j - kw] = fscale_x;
+            spat_scales_y[spat_row_idx + j - kw] = fscale_y;
+            aggregate += fabs(fentropy_x * fscale_x - fentropy_y * fscale_y);
+        }
+    }
+    return aggregate;
+}
+
+static inline float strred_horz_integralsum_wavelet(
+    int kw, int width_p1, int16_t knorm_fact, int16_t knorm_shift, uint32_t entr_const,
+    double sigma_nsq_arg, uint32_t *log_18, uint64_t *log_22, int32_t *interim_1_x,
+    int64_t *interim_2_x, int32_t *interim_1_y, int64_t *interim_2_y, uint8_t enable_temporal,
+    float *spat_scales_x, float *spat_scales_y, int32_t spat_row_idx, int32_t pending_div_fac)
+{
+    int32_t int_1_x, int_1_y;
+    int64_t int_2_x, int_2_y;
+    int32_t mx, my;
+    int32_t var_x, var_y;
+
+    // 1st column vals are 0, hence intialising to 0
+    int_1_x = 0;
+    int_1_y = 0;
+    int_2_x = 0;
+    int_2_y = 0;
+
+    /**
+     * The horizontal accumulation similar to vertical accumulation
+     * metric_sum = prev_col_metric_sum + interim_metric_vertical_sum
+     * The previous kw col interim metric sum is not subtracted since it is not available here
+     */
+
+    int64_t mul_x, mul_y;
+    int64_t add_x, add_y;
+    int ex, ey, sx, sy;
+    uint32_t e_look_x, e_look_y;
+    uint32_t s_look_x, s_look_y;
+    int64_t entropy_x, entropy_y, scale_x, scale_y;
+
+    float fentropy_x, fentropy_y, fscale_x, fscale_y;
+    float aggregate = 0;
+
+    int32_t pending_div_minus_var_fac = pending_div_fac - VARIANCE_SHIFT_FACTOR;
+    int64_t div_fac = (int64_t) (1 << pending_div_minus_var_fac) * 255 * 255 * 81;
+    uint64_t sigma_nsq = div_fac * sigma_nsq_arg;
+    uint64_t const_val = div_fac;
+    int64_t sub_val =
+        (int64_t) ((log2(255.0 * 255 * 81) + pending_div_minus_var_fac) * TWO_POWER_Q_FACTOR);
+
+    for(int j = 1; j < kw + 1; j++) {
+        int_1_x = interim_1_x[j] + int_1_x;
+        int_1_y = interim_1_y[j] + int_1_y;
+        int_2_x = interim_2_x[j] + int_2_x;
+        int_2_y = interim_2_y[j] + int_2_y;
+    }
+
+    {
+        mx = int_1_x;
+        my = int_1_y;
+        var_x = ((int_2_x - (((int64_t) mx * mx * knorm_fact) >> knorm_shift)) +
+                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
+                VARIANCE_SHIFT_FACTOR;
+        var_y = ((int_2_y - (((int64_t) my * my * knorm_fact) >> knorm_shift)) +
+                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
+                VARIANCE_SHIFT_FACTOR;
+        var_x = (var_x < 0) ? 0 : var_x;
+        var_y = (var_y < 0) ? 0 : var_y;
+
+#if STRRED_10bit_LUT
+        int vx, vy; 
+        int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
+        int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vx * 1024 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vy * 1024 * 2 + 2 * var_y_10bit;
+        entropy_x = log_22[x_idx] + entr_const;
+        entropy_y = log_22[y_idx] + entr_const;
+
+        scale_x = log_22[x_idx + 1];
+        scale_y = log_22[y_idx + 1];
+#else
+        mul_x = (uint64_t) (var_x + sigma_nsq);
+        mul_y = (uint64_t) (var_y + sigma_nsq);
+        e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
+        e_look_y = strred_get_best_u22_from_u64((uint64_t) mul_y, &ey);
+        entropy_x = log_22[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
+        entropy_y = log_22[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
+
+        add_x = (uint64_t) (var_x + const_val);
+        add_y = (uint64_t) (var_y + const_val);
+        s_look_x = strred_get_best_u22_from_u64((uint64_t) add_x, &sx);
+        s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
+        scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
+        scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#endif
+        entropy_x = entropy_x - sub_val;
+        entropy_y = entropy_y - sub_val;
+        scale_x = scale_x - sub_val;
+        scale_y = scale_y - sub_val;
+
+        fentropy_x = (float) entropy_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+        fentropy_y = (float) entropy_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+        fscale_x = (float) scale_x / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+        fscale_y = (float) scale_y / (TWO_POWER_Q_FACTOR * LOGE_BASE2);
+
+        if(enable_temporal == 1) {
+            aggregate += fabs(fentropy_x * fscale_x * spat_scales_x[spat_row_idx] -
+                              fentropy_y * fscale_y * spat_scales_y[spat_row_idx]);
+        } else {
+            spat_scales_x[spat_row_idx] = fscale_x;
+            spat_scales_y[spat_row_idx] = fscale_y;
+            aggregate += fabs(fentropy_x * fscale_x - fentropy_y * fscale_y);
+        }
+    }
+
+    /**
+     * The score needs to be calculated for kw column as well,
+     * whose interim result calc is different from rest of the columns,
+     * hence calling strred_calc_entropy_scale for kw column separately
+     */
+
+    // Similar to prev loop, but previous kw col interim metric sum is subtracted
+    for(int j = kw + 1; j < width_p1; j++) {
+        int_1_x = interim_1_x[j] + int_1_x - interim_1_x[j - kw];
+        int_1_y = interim_1_y[j] + int_1_y - interim_1_y[j - kw];
+        int_2_x = interim_2_x[j] + int_2_x - interim_2_x[j - kw];
+        int_2_y = interim_2_y[j] + int_2_y - interim_2_y[j - kw];
+
+        mx = int_1_x;
+        my = int_1_y;
+        var_x = ((int_2_x - (((int64_t) mx * mx * knorm_fact) >> knorm_shift)) +
+                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
+                VARIANCE_SHIFT_FACTOR;
+        var_y = ((int_2_y - (((int64_t) my * my * knorm_fact) >> knorm_shift)) +
+                 (1 << (VARIANCE_SHIFT_FACTOR - 1))) >>
+                VARIANCE_SHIFT_FACTOR;
+        var_x = (var_x < 0) ? 0 : var_x;
+        var_y = (var_y < 0) ? 0 : var_y;
+
+#if STRRED_10bit_LUT
+        int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
         int x_idx = (pending_div_minus_var_fac/2) * 21 * 1024 * 2 + vx * 1024 * 2 + 2 * var_x_10bit;
@@ -406,7 +461,7 @@ static inline float strred_horz_integralsum_wavelet(
 
 static inline float integer_rred_entropies_and_scales(const dwt2_dtype *x_t, const dwt2_dtype *y_t,
                                                       size_t width, size_t height, uint32_t *log_18,
-                                                      uint32_t *log_22, double sigma_nsq_arg,
+                                                      uint64_t *log_22, double sigma_nsq_arg,
                                                       int32_t shift_val, uint8_t enable_temporal,
                                                       float *spat_scales_x, float *spat_scales_y,
                                                       uint8_t check_enable_spatial_csf)
