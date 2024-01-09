@@ -132,7 +132,7 @@ typedef struct IntFunqueState
     // 21 shift factors -> var_x has max 31 bits. After taking best 10bits, it can have value upto 21
     // 1024 -> 10 bit look up table
     // 2 -> entropy and scale log look ups
-    uint64_t log_lut[9*21*1024*2];
+    uint64_t log_12[9*21*4096*2];
 #endif
 
     // ADM extra variables
@@ -675,12 +675,12 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 #endif
 #endif
 
-    // funque_log_generate(s->log_18);
+    funque_log_generate(s->log_18);
     div_lookup_generator(s->adm_div_lookup);
-    strred_funque_log_generate(s->log_18);
+    //strred_funque_log_generate(s->log_18);
     strred_funque_generate_log22(s->log_22);
 #if STRRED_10bit_LUT
-    gen_funque_strred_log10bit(s->log_lut);
+    gen_funque_strred_log10bit(s->log_12);
 #endif
 
     return 0;
@@ -1046,9 +1046,9 @@ static int extract(VmafFeatureExtractor *fex,
                 err |= s->modules.integer_compute_strred_funque(
                     &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &s->i_prev_ref[level],
                     &s->i_prev_dist[level], s->i_ref_dwt2out[level].width,
-                    s->i_ref_dwt2out[level].height, &s->strred_scores, BLOCK_SIZE, level, s->log_18,
+                    s->i_ref_dwt2out[level].height, &s->strred_scores, BLOCK_SIZE, level, s->log_22,
 #if STRRED_10bit_LUT
-                    s->log_lut,
+                    s->log_12,
 #else
                     s->log_22, 
 #endif

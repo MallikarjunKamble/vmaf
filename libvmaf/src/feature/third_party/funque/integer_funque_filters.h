@@ -175,8 +175,8 @@ typedef struct ModuleFunqueState
                                          struct i_dwt2buffers *prev_ref,
                                          struct i_dwt2buffers *prev_dist, size_t width,
                                          size_t height, struct strred_results *strred_scores,
-                                         int block_size, int level, uint32_t *log_18,
-                                         uint64_t *log_22, int32_t shift_val, double sigma_nsq_t,
+                                         int block_size, int level, uint32_t *log_22,
+                                         uint64_t *log_12, int32_t shift_val, double sigma_nsq_t,
                                          uint8_t enable_spatial_csf);
 #else
     int (*integer_compute_strred_funque)(const struct i_dwt2buffers *ref,
@@ -184,7 +184,7 @@ typedef struct ModuleFunqueState
                                          struct i_dwt2buffers *prev_ref,
                                          struct i_dwt2buffers *prev_dist, size_t width,
                                          size_t height, struct strred_results *strred_scores,
-                                         int block_size, int level, uint32_t *log_18,
+                                         int block_size, int level, uint32_t *log_22,
                                          uint32_t *log_22, int32_t shift_val, double sigma_nsq_t,
                                          uint8_t enable_spatial_csf);
 #endif

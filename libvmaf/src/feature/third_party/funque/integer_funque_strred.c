@@ -28,25 +28,25 @@
 #include "integer_funque_strred.h"
 
 // just change the store offset to reduce multiple calculation when getting log2f value
-void strred_funque_log_generate(uint32_t *log_18)
-{
-    uint64_t i;
-    uint64_t start = (unsigned int) pow(2, 17);
-    uint64_t end = (unsigned int) pow(2, 18);
-    for(i = start; i < end; i++) {
-        log_18[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
-    }
-}
+//void strred_funque_log_generate(uint32_t *log_12)
+//{
+//    uint64_t i;
+//    uint64_t start = (unsigned int) pow(2, 17);
+//    uint64_t end = (unsigned int) pow(2, 18);
+//    for(i = start; i < end; i++) {
+//        log_22[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
+//    }
+//}
 
 #if STRRED_10bit_LUT
-void gen_funque_strred_log10bit(uint64_t *log_lut)
+void gen_funque_strred_log10bit(uint64_t *log_12)
 {
     int16_t i;
     for (int pend_idx=0; pend_idx<9; pend_idx++)
     {
         for (int shift_idx=0; shift_idx<21; shift_idx++)
         {
-            for (int i=0; i<1024; i++)
+            for (int i=0; i<4096; i++)
             {
                 int64_t div_fac = 255 * 255 * 81 * (1 << (2 * pend_idx));
                 int64_t sigma_nsq = 0.1 * div_fac;
@@ -54,22 +54,22 @@ void gen_funque_strred_log10bit(uint64_t *log_lut)
                 int32_t inp_var = i << shift_idx;
                 int64_t inp_entr_log = sigma_nsq + inp_var;
                 int64_t inp_scale_log = const_val + inp_var;
-                int idx_val = pend_idx * 21 * 1024 * 2 + shift_idx * 1024 * 2 + 2 * i;
-                log_lut[idx_val] = (uint64_t) round(log2((double) inp_entr_log) * (1 << STRRED_Q_FORMAT));
-                log_lut[idx_val + 1] = (uint64_t) round(log2((double) inp_scale_log) * (1 << STRRED_Q_FORMAT));
+                int idx_val = pend_idx * 21 * 4096 * 2 + shift_idx * 4096 * 2 + 2 * i;
+                log_12[idx_val] = (uint64_t) round(log2((double) inp_entr_log) * (1 << STRRED_Q_FORMAT));
+                log_12[idx_val + 1] = (uint64_t) round(log2((double) inp_scale_log) * (1 << STRRED_Q_FORMAT));
             }   
         }
     }
 }
 #endif
 
-void strred_funque_generate_log22(uint32_t *log_22)
+void strred_funque_generate_log22(uint32_t *log_12)
 {
     uint64_t i;
     uint64_t start = (unsigned int) pow(2, 21);
     uint64_t end = (unsigned int) pow(2, 22);
     for(i = start; i < end; i++) {
-        log_22[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
+        log_12[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
     }
 }
 
@@ -147,7 +147,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     struct i_dwt2buffers *prev_ref, struct i_dwt2buffers *prev_dist,
                                     size_t width, size_t height,
                                     struct strred_results *strred_scores, int block_size, int level,
-                                    uint32_t *log_18, uint64_t *log_22, int32_t shift_val_arg,
+                                    uint32_t *log_22, uint64_t *log_12, int32_t shift_val_arg,
                                     double sigma_nsq_t, uint8_t check_enable_spatial_csf)
 {
     int ret;
@@ -177,7 +177,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
             shift_val = 2 * i_nadenau_pending_div_factors[level][subband];
         }
         spat_values[subband] = integer_rred_entropies_and_scales(
-            ref->bands[subband], dist->bands[subband], width, height, log_18, log_22, sigma_nsq_t,
+            ref->bands[subband], dist->bands[subband], width, height, log_22, log_12, sigma_nsq_t,
             shift_val, enable_temp, scales_spat_x, scales_spat_y, check_enable_spatial_csf);
         fspat_val[subband] = spat_values[subband] / (width * height);
 
@@ -191,7 +191,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                        dist->bands[subband], prev_dist->bands[subband],
                                        dist_temporal, width, height);
             temp_values[subband] = integer_rred_entropies_and_scales(
-                ref_temporal, dist_temporal, width, height, log_18, log_22, sigma_nsq_t, shift_val,
+                ref_temporal, dist_temporal, width, height, log_22, log_12, sigma_nsq_t, shift_val,
                 enable_temp, scales_spat_x, scales_spat_y, check_enable_spatial_csf);
             ftemp_val[subband] = temp_values[subband] / (width * height);
 
