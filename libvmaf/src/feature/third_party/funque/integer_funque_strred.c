@@ -46,7 +46,7 @@ void gen_funque_strred_log10bit(uint64_t *log_12)
     {
         for (int shift_idx=0; shift_idx<21; shift_idx++)
         {
-            for (int i=0; i<4096; i++)
+            for (int i=0; i<65536; i++)
             {
                 int64_t div_fac = 255 * 255 * 81 * (1 << (2 * pend_idx));
                 int64_t sigma_nsq = 0.1 * div_fac;
@@ -54,7 +54,7 @@ void gen_funque_strred_log10bit(uint64_t *log_12)
                 int32_t inp_var = i << shift_idx;
                 int64_t inp_entr_log = sigma_nsq + inp_var;
                 int64_t inp_scale_log = const_val + inp_var;
-                int idx_val = pend_idx * 21 * 4096 * 2 + shift_idx * 4096 * 2 + 2 * i;
+                int idx_val = pend_idx * 21 * 65536 * 2 + shift_idx * 65536 * 2 + 2 * i;
                 log_12[idx_val] = (uint64_t) round(log2((double) inp_entr_log) * (1 << STRRED_Q_FORMAT));
                 log_12[idx_val + 1] = (uint64_t) round(log2((double) inp_scale_log) * (1 << STRRED_Q_FORMAT));
             }   
@@ -63,13 +63,13 @@ void gen_funque_strred_log10bit(uint64_t *log_12)
 }
 #endif
 
-void strred_funque_generate_log22(uint32_t *log_12)
+void strred_funque_generate_log22(uint32_t *log_22)
 {
     uint64_t i;
     uint64_t start = (unsigned int) pow(2, 21);
     uint64_t end = (unsigned int) pow(2, 22);
     for(i = start; i < end; i++) {
-        log_12[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
+        log_22[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
     }
 }
 

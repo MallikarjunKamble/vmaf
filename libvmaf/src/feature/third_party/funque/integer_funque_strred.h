@@ -44,7 +44,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     struct i_dwt2buffers *prev_ref, struct i_dwt2buffers *prev_dist,
                                     size_t width, size_t height,
                                     struct strred_results *strred_scores, int block_size, int level,
-                                    uint32_t *log_22, uint32_t *log_22, int32_t shift_val,
+                                    uint32_t *log_22, uint32_t *log_12, int32_t shift_val,
                                     double sigma_nsq_t, uint8_t enable_spatial_csf);
 #endif
 
@@ -61,19 +61,20 @@ void integer_subract_subbands_c(const dwt2_dtype *ref_src, const dwt2_dtype *ref
                                 size_t height);
 
 void strred_funque_generate_log22(uint32_t *log_22);
+void gen_funque_strred_log10bit(uint64_t *log_12);
 
 #if STRRED_10bit_LUT
 static inline int16_t get_best_i10_from_i32(uint32_t temp, int *x)
 {
     //assert(temp >= 0x400);
-    if(temp < 0x1000)
+    if(temp < 0x10000)
     {
         *x = 0;
     }
     else
     {
         int k = __builtin_clz(temp);    //built in for intel
-        k = 20 - k;
+        k = 16 - k;
         temp = (temp + (1 << (k - 1))) >> k;
         *x = k;
     }
@@ -168,8 +169,8 @@ static inline float strred_horz_integralsum_spatial_csf(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vx * 4096 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vy * 4096 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
         int64_t entropy_x_new = log_12[x_idx] + entr_const;
         int64_t entropy_y_new = log_12[y_idx] + entr_const;
 
@@ -190,10 +191,10 @@ static inline float strred_horz_integralsum_spatial_csf(
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
 
-        if(((entropy_x_new - entropy_x) > 4096) || ((entropy_y_new - entropy_y)) > 4096)
+        if(((entropy_x_new - entropy_x) > 65536) || ((entropy_y_new - entropy_y)) > 65536)
             printf("\nEntropies differ\n");
 
-        if(((scale_x_new - scale_x) > 4096) || ((scale_y_new - scale_y)) > 4096)
+        if(((scale_x_new - scale_x) > 65536) || ((scale_y_new - scale_y)) > 65536)
             printf("\nScales differ\n");
 
 #endif
@@ -245,8 +246,8 @@ static inline float strred_horz_integralsum_spatial_csf(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vx * 4096 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vy * 4096 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
         int64_t entropy_x_new = log_12[x_idx] + entr_const;
         int64_t entropy_y_new = log_12[y_idx] + entr_const;
 
@@ -267,10 +268,10 @@ static inline float strred_horz_integralsum_spatial_csf(
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
 
-        if(((entropy_x_new - entropy_x) > 4096) || ((entropy_y_new - entropy_y)) > 4096)
+        if(((entropy_x_new - entropy_x) > 65536) || ((entropy_y_new - entropy_y)) > 65536)
             printf("\nEntropies differ\n");
 
-        if(((scale_x_new - scale_x) > 4096) || ((scale_y_new - scale_y)) > 4096)
+        if(((scale_x_new - scale_x) > 65536) || ((scale_y_new - scale_y)) > 65536)
             printf("\nScales differ\n");
 
 #endif
@@ -359,8 +360,8 @@ static inline float strred_horz_integralsum_wavelet(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vx * 4096 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vy * 4096 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
         entropy_x = log_12[x_idx] + entr_const;
         entropy_y = log_12[y_idx] + entr_const;
 
@@ -429,8 +430,8 @@ static inline float strred_horz_integralsum_wavelet(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vx * 4096 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 4096 * 2 + vy * 4096 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
         entropy_x = log_12[x_idx] + entr_const;
         entropy_y = log_12[y_idx] + entr_const;
 
