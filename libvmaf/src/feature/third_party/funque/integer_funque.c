@@ -101,6 +101,7 @@ typedef struct IntFunqueState
     spat_fil_coeff_dtype csf_factors[4][4];
     uint16_t csf_interim_rnd[4][4];
     uint8_t csf_interim_shift[4][4];
+    uint8_t csf_pending_div[4][4];  
 
     spat_fil_inter_dtype *spat_tmp_buf;
     spat_fil_output_dtype *filter_buffer;
@@ -489,6 +490,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
                 s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
                 s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_nadenau_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_nadenau_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_nadenau_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_nadenau_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "li") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -506,6 +512,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
                 s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
                 s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+            
+                s->csf_pending_div[level][0] = i_li_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_li_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_li_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_li_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "hill") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -523,6 +534,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
                 s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
                 s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_hill_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_hill_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_hill_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_hill_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "watson") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -540,6 +556,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
                 s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
                 s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_watson_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_watson_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_watson_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_watson_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "mannos_weight") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -557,6 +578,11 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
                 s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
                 s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_mannos_weight_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_mannos_weight_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_mannos_weight_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_mannos_weight_pending_div_factors[level][3];
             }
         }
     }
@@ -1052,7 +1078,7 @@ static int extract(VmafFeatureExtractor *fex,
 
             float adm_pending_div = pending_div_factor;
             if(!s->enable_spatial_csf)
-                adm_pending_div = (1 << (i_nadenau_pending_div_factors[level][1])) * bitdepth_pow2;
+                adm_pending_div = (1 << (s->csf_pending_div[level][1])) * bitdepth_pow2;
 
             adm_num += adm_score_num[level] / adm_pending_div;
             adm_den += adm_score_den[level] / adm_pending_div;
@@ -1066,9 +1092,9 @@ static int extract(VmafFeatureExtractor *fex,
             int pending_div_offset = 0;
             int pending_div_halfround = 0;
             if(s->enable_spatial_csf == false) {
-                pending_div_c1 = (1 << i_nadenau_pending_div_factors[level][0]) * 255;
-                pending_div_c2 = (1 << (i_nadenau_pending_div_factors[level][1] + (level))) * 255;
-                pending_div_offset = 2 * (i_nadenau_pending_div_factors[level][3] - i_nadenau_pending_div_factors[level][1]);
+                pending_div_c1 = (1 << s->csf_pending_div[level][0]) * 255;
+                pending_div_c2 = (1 << (s->csf_pending_div[level][1] + (level))) * 255;
+                pending_div_offset = 2 * (s->csf_pending_div[level][3] - s->csf_pending_div[level][1]);
                 pending_div_halfround = (pending_div_offset == 0) ? 0 : (1 << (pending_div_offset - 1));
             }
             err = s->modules.integer_compute_ms_ssim_funque(
@@ -1081,8 +1107,8 @@ static int extract(VmafFeatureExtractor *fex,
             if((level < s->ms_ssim_levels) && (s->enable_spatial_csf == false)) {
                 int cum_array_width = (s->i_ref_dwt2out[level].width) * (1 << (level + 1));
                 int index_cum = 0;
-                int shift_cums = 2 * (i_nadenau_pending_div_factors[level][1] -
-                                  i_nadenau_pending_div_factors[level+1][1] - 1);
+                int shift_cums = 2 * (s->csf_pending_div[level][1] -
+                                  s->csf_pending_div[level+1][1] - 1);
                 for(int i = 0; i < s->i_ref_dwt2out[level].height; i++) {
                     for(int j = 0; j < s->i_ref_dwt2out[level].width; j++) {
                         var_x_cum[index_cum] =
@@ -1111,9 +1137,8 @@ static int extract(VmafFeatureExtractor *fex,
                 ssim_pending_div =
                     ((1 << (spatfilter_shifts + dwt_shifts)) * bitdepth_pow2) >> level;
             } else {
-                ssim_pending_div = (1 << i_nadenau_pending_div_factors[level][0]) * 255;
-                k2 = k2 * (1 << (i_nadenau_pending_div_factors[level][1] -
-                                 i_nadenau_pending_div_factors[level][0]));
+                ssim_pending_div = (1 << s->csf_pending_div[level][0]) * 255;
+                k2 = k2 * (1 << (s->csf_pending_div[level][1] - s->csf_pending_div[level][0]));
             }
             err = s->modules.integer_compute_ssim_funque(
                 &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &ssim_score[level], 1, k1, k2,
@@ -1128,7 +1153,7 @@ static int extract(VmafFeatureExtractor *fex,
             if(s->enable_spatial_csf) {
                 vif_pending_div = (1 << (spatfilter_shifts + dwt_shifts - level)) * bitdepth_pow2;
             } else {
-                vif_pending_div = (1 << (i_nadenau_pending_div_factors[level][0])) * bitdepth_pow2;
+                vif_pending_div = (1 << (s->csf_pending_div[level][0])) * bitdepth_pow2;
             }
 #if USE_DYNAMIC_SIGMA_NSQ
             err = s->modules.integer_compute_vif_funque(
@@ -1163,7 +1188,7 @@ static int extract(VmafFeatureExtractor *fex,
                     &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &s->i_prev_ref[level],
                     &s->i_prev_dist[level], s->i_ref_dwt2out[level].width,
                     s->i_ref_dwt2out[level].height, &s->strred_scores, BLOCK_SIZE, level, s->log_18,
-                    s->log_22, strred_pending_div, (double) 0.1, s->enable_spatial_csf);
+                    s->log_22, strred_pending_div, (double) 0.1, s->enable_spatial_csf, s->csf_pending_div[level]);
 
                 err |= s->modules.integer_copy_prev_frame_strred_funque(
                     &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &s->i_prev_ref[level],
