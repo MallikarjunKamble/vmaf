@@ -80,7 +80,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_SIMD_PROFILING 1
+#define ENABLE_SIMD_PROFILING 0
 
 typedef struct IntFunqueState
 {
@@ -1060,16 +1060,42 @@ static int extract(VmafFeatureExtractor *fex,
             if(err)
                 return err;
         }
-
         if((s->ms_ssim_levels != 0) && (level < s->ms_ssim_levels)) {
+            int pending_div_c1 = (int) pending_div_factor >> (level);
+            int pending_div_c2 = (int) pending_div_factor >> (level);
+            int pending_div_offset = 0;
+            int pending_div_halfround = 0;
+            if(s->enable_spatial_csf == false) {
+                pending_div_c1 = (1 << i_nadenau_pending_div_factors[level][0]) * 255;
+                pending_div_c2 = (1 << (i_nadenau_pending_div_factors[level][1] + (level))) * 255;
+                pending_div_offset = 2 * (i_nadenau_pending_div_factors[level][3] - i_nadenau_pending_div_factors[level][1]);
+                pending_div_halfround = (pending_div_offset == 0) ? 0 : (1 << (pending_div_offset - 1));
+            }
             err = s->modules.integer_compute_ms_ssim_funque(
                 &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &ms_ssim_score[level], 1, 0.01,
-                0.03, pending_div_factor, s->adm_div_lookup, (level + 1),
+                0.03, pending_div_c1, pending_div_c2, pending_div_offset, pending_div_halfround, s->adm_div_lookup, (level + 1),
                 (int) (s->enable_spatial_csf == false));
-
             err = s->modules.integer_mean_2x2_ms_ssim_funque(var_x_cum, var_y_cum, cov_xy_cum,
                                                              s->i_ref_dwt2out[level].width,
-                                                             s->i_ref_dwt2out[level].height, level);
+                                                             s->i_ref_dwt2out[level].height, level);                                                
+            if((level < s->ms_ssim_levels) && (s->enable_spatial_csf == false)) {
+                int cum_array_width = (s->i_ref_dwt2out[level].width) * (1 << (level + 1));
+                int index_cum = 0;
+                int shift_cums = 2 * (i_nadenau_pending_div_factors[level][1] -
+                                  i_nadenau_pending_div_factors[level+1][1] - 1);
+                for(int i = 0; i < s->i_ref_dwt2out[level].height; i++) {
+                    for(int j = 0; j < s->i_ref_dwt2out[level].width; j++) {
+                        var_x_cum[index_cum] =
+                            (var_x_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+                        var_y_cum[index_cum] =
+                            (var_y_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+                        cov_xy_cum[index_cum] =
+                            (cov_xy_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+                        index_cum++;
+                }
+                index_cum += (cum_array_width - s->i_ref_dwt2out[level].width);
+                }
+            }
 
             if(level != s->ms_ssim_levels - 1) {
                 ms_ssim_score[level + 1].var_x_cum = ms_ssim_score[level].var_x_cum;
