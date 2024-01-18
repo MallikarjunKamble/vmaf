@@ -28,7 +28,8 @@
 
 #define LOGE_BASE2 1.442684682
 
-
+#define STRRED_LOG_PRECISION 16
+#define STRRED_LOG_LOOKUP_MAX 65536   //2^22
 
 #if STRRED_10bit_LUT
 int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
@@ -64,17 +65,17 @@ void strred_funque_generate_log22(uint32_t *log_22);
 void gen_funque_strred_log10bit(uint64_t *log_12);
 
 #if STRRED_10bit_LUT
-static inline int16_t get_best_i10_from_i32(uint32_t temp, int *x)
+static inline uint32_t get_best_i10_from_i32(uint32_t temp, int *x)
 {
-    //assert(temp >= 0x400);
-    if(temp < 0x10000)
+    // assert(temp >= 0x400);
+    if(temp < STRRED_LOG_LOOKUP_MAX)
     {
         *x = 0;
     }
     else
     {
         int k = __builtin_clz(temp);    //built in for intel
-        k = 16 - k;
+        k = (32 - STRRED_LOG_PRECISION) - k;
         temp = (temp + (1 << (k - 1))) >> k;
         *x = k;
     }
@@ -169,8 +170,8 @@ static inline float strred_horz_integralsum_spatial_csf(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vx * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vy * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_y_10bit;
         int64_t entropy_x_new = log_12[x_idx] + entr_const;
         int64_t entropy_y_new = log_12[y_idx] + entr_const;
 
@@ -246,8 +247,8 @@ static inline float strred_horz_integralsum_spatial_csf(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vx * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vy * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_y_10bit;
         int64_t entropy_x_new = log_12[x_idx] + entr_const;
         int64_t entropy_y_new = log_12[y_idx] + entr_const;
 
@@ -360,8 +361,8 @@ static inline float strred_horz_integralsum_wavelet(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vx * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vy * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_y_10bit;
         entropy_x = log_12[x_idx] + entr_const;
         entropy_y = log_12[y_idx] + entr_const;
 
@@ -430,8 +431,8 @@ static inline float strred_horz_integralsum_wavelet(
         int vx, vy; 
         int var_x_10bit = (int) get_best_i10_from_i32((uint32_t) var_x, &vx);
         int var_y_10bit = (int) get_best_i10_from_i32((uint32_t) var_y, &vy);
-        int x_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vx * 65536 * 2 + 2 * var_x_10bit;
-        int y_idx = (pending_div_minus_var_fac/2) * 21 * 65536 * 2 + vy * 65536 * 2 + 2 * var_y_10bit;
+        int x_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vx * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_x_10bit;
+        int y_idx = (pending_div_minus_var_fac/2) * 21 * STRRED_LOG_LOOKUP_MAX * 2 + vy * STRRED_LOG_LOOKUP_MAX * 2 + 2 * var_y_10bit;
         entropy_x = log_12[x_idx] + entr_const;
         entropy_y = log_12[y_idx] + entr_const;
 
