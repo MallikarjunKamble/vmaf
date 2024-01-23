@@ -197,8 +197,7 @@ static const spat_fil_coeff_dtype i_nadenau_weight_coeffs[4][4] = {
     {16384, 27836, 24297, 27836},
 #endif
     {16384, 26081, 20876, 26081},
-    {16384, 30836, 29061, 30836},
-    /*{ 1, 0.98396102, 0.96855064, 0.98396102},*/
+    {16384, 30836, 29061, 30836}
 };
 
 static const uint8_t i_nadenau_pending_div_factors[4][4] = {
@@ -210,19 +209,19 @@ static const uint8_t i_nadenau_pending_div_factors[4][4] = {
     {5, 7, 7, 8},     // L1
 #endif
     {4, 5, 5, 5},  // L2
-    {3, 4, 4, 4},  // L3
+    {3, 4, 4, 4}  // L3
 };
-// interim_shift is same for all nadenau_weight, watson, li, hill filters
-static const uint8_t i_interim_shift[4][4] = {
+
+static const uint8_t i_nadenau_interim_shift[4][4] = {
     {9, 9, 9, 9},
     {11, 11, 11, 11},
     {13, 13, 13, 13},
-    {13, 13, 13, 13},
+    {13, 13, 13, 13}
 };
 
 static const spat_fil_coeff_dtype i_li_coeffs[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
-    {16384, 22842, 967, 22842},
+    {16384, 11421, 967, 11421},
     {16384, 21867, 5341, 21867},
     {16384, 21885, 12754, 21885},
 #else
@@ -230,20 +229,21 @@ static const spat_fil_coeff_dtype i_li_coeffs[4][4] = {
     {16384, 21867, 21362, 21867},
     {16384, 21885, 25508, 21885},
 #endif
-    {16384, 32318, 29061, 32318},
+    {16384, 32318, 29061, 32318}
+};
+
+static const uint8_t i_li_interim_shift[4][4] = {
+    {9, 10, 11, 10},
+    {11, 12, 12, 12},
+    {13, 13, 13, 13},
+    {13, 13, 13, 13}
 };
 
 static const uint8_t i_li_pending_div_factors[4][4] = {
-#if BAND_HVD_SAME_PENDING_DIV
-    {6, 14, 14, 14},  // L0
-    {5, 8, 8, 10},    // L1
-    {4, 5, 5, 6},     // L2
-#else
-    {6, 14, 14, 19},  // L0
-    {5, 8, 8, 10},    // L1
-    {4, 5, 5, 6},     // L2
-#endif
-    {3, 4, 4, 4},  // L3
+    {6, 12, 12, 12},  // L0
+    {5, 7, 7, 7},   // L1
+    {4, 5, 5, 5},  // L2
+    {3, 4, 4, 4}  // L3
 };
 
 static const spat_fil_coeff_dtype i_hill_coeffs[4][4] = {
@@ -256,9 +256,16 @@ static const spat_fil_coeff_dtype i_hill_coeffs[4][4] = {
     {16384, -22164, 28535, -22164},
     {16384, -17920, -26774, -17920},
 #endif
-    {16384, -22347, -32484, -22347},
+    {16384, -22347, -32484, -22347}
 };
 
+static const uint8_t i_hill_interim_shift[4][4] = {
+    {9, 9, 9, 9},
+    {11, 11, 11, 11},
+    {13, 13, 13, 13},
+    {13, 13, 13, 13},
+};
+ 
 static const uint8_t i_hill_pending_div_factors[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
     {6, 10, 10, 10},  // L0
@@ -269,7 +276,7 @@ static const uint8_t i_hill_pending_div_factors[4][4] = {
     {5, 7, 7, 9},     // L1
     {4, 8, 8, 7},     // L2
 #endif
-    {3, 8, 8, 8},  // L3
+    {3, 8, 8, 8}  // L3
 };
 
 static const spat_fil_coeff_dtype i_watson_coeffs[4][4] = {
@@ -281,8 +288,14 @@ static const spat_fil_coeff_dtype i_watson_coeffs[4][4] = {
     {16384, 27836, 24297, 27836},
 #endif
     {16384, 22740, 12791, 22740},
-    {16384, 23946, 16417, 23946},
-    /*{ 1, 0.98396102, 0.96855064, 0.98396102},*/
+    {16384, 23946, 16417, 23946}
+};
+
+static const uint8_t i_watson_interim_shift[4][4] = {
+    {9, 9, 9, 9},
+    {11, 11, 11, 11},
+    {13, 13, 13, 13},
+    {13, 13, 13, 13}
 };
 
 static const uint8_t i_watson_pending_div_factors[4][4] = {
@@ -306,14 +319,20 @@ static const spat_fil_coeff_dtype i_mannos_weight_coeffs[4][4] = {
     {16384, 29492, 29501, 29492},
 #endif
     {16384, 25627, 16194, 25627},
-    {16384, 32145, 32145, 32145},
-    /*{ 1, 0.98396102, 0.96855064, 0.98396102},*/
+    {16384, 32145, 32145, 32145}
+};
+
+static const uint8_t i_mannos_weight_interim_shift[4][4] = {
+    {9, 8, 8, 8},
+    {11, 12, 12, 12},
+    {13, 13, 13, 13},
+    {13, 13, 13, 13}
 };
 
 static const uint8_t i_mannos_weight_pending_div_factors[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
     {6, 14, 14, 14},  // L0
-    {5, 8, 8, 8},     // L1
+    {5, 7, 7, 7},     // L1
 #else
     {6, 14, 14, 19},  // L0
     {5, 8, 8, 10},    // L1

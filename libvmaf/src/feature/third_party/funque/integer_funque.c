@@ -481,15 +481,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_nadenau_weight_coeffs[level][2];
                 s->csf_factors[level][3] = i_nadenau_weight_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_nadenau_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_nadenau_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_nadenau_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_nadenau_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_nadenau_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_nadenau_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_nadenau_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_nadenau_interim_shift[level][3] - 1);
 
                 s->csf_pending_div[level][0] = i_nadenau_pending_div_factors[level][0];
                 s->csf_pending_div[level][1] = i_nadenau_pending_div_factors[level][1];
@@ -503,15 +503,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_li_coeffs[level][2];
                 s->csf_factors[level][3] = i_li_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_li_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_li_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_li_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_li_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_li_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_li_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_li_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_li_interim_shift[level][3] - 1);
             
                 s->csf_pending_div[level][0] = i_li_pending_div_factors[level][0];
                 s->csf_pending_div[level][1] = i_li_pending_div_factors[level][1];
@@ -525,15 +525,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_hill_coeffs[level][2];
                 s->csf_factors[level][3] = i_hill_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_hill_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_hill_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_hill_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_hill_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_hill_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_hill_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_hill_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_hill_interim_shift[level][3] - 1);
 
                 s->csf_pending_div[level][0] = i_hill_pending_div_factors[level][0];
                 s->csf_pending_div[level][1] = i_hill_pending_div_factors[level][1];
@@ -547,15 +547,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_watson_coeffs[level][2];
                 s->csf_factors[level][3] = i_watson_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_watson_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_watson_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_watson_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_watson_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_watson_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_watson_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_watson_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_watson_interim_shift[level][3] - 1);
 
                 s->csf_pending_div[level][0] = i_watson_pending_div_factors[level][0];
                 s->csf_pending_div[level][1] = i_watson_pending_div_factors[level][1];
@@ -569,15 +569,15 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_mannos_weight_coeffs[level][2];
                 s->csf_factors[level][3] = i_mannos_weight_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_mannos_weight_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_mannos_weight_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_mannos_weight_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_mannos_weight_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_mannos_weight_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_mannos_weight_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_mannos_weight_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_mannos_weight_interim_shift[level][3] - 1);
 
                 s->csf_pending_div[level][0] = i_mannos_weight_pending_div_factors[level][0];
                 s->csf_pending_div[level][1] = i_mannos_weight_pending_div_factors[level][1];
