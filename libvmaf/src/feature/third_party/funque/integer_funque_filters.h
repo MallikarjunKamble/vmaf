@@ -213,8 +213,8 @@ static const uint8_t i_nadenau_pending_div_factors[4][4] = {
 };
 
 static const uint8_t i_nadenau_interim_shift[4][4] = {
-    {9, 12, 17, 12},
-    {11, 12, 14, 12},
+    {9, 9, 12, 9},
+    {11, 11, 12, 11},
     {13, 13, 13, 13},
     {13, 13, 13, 13}
 };
@@ -229,18 +229,18 @@ static const spat_fil_coeff_dtype i_li_coeffs[4][4] = {
     {16384, 21867, 21362, 21867},
     {16384, 21885, 25508, 21885},
 #endif
-    {16384, 32318, 29061, 32318}
+    {16384, 32318, 28749, 32318}
 };
 
 static const uint8_t i_li_interim_shift[4][4] = {
-    {9, 11, 16, 11},
+    {9, 12, 17, 12},
     {11, 12, 14, 12},
     {13, 13, 14, 13},
     {13, 13, 13, 13}
 };
 
 static const uint8_t i_li_pending_div_factors[4][4] = {
-    {6, 12, 12, 12},  // L0
+    {6, 11, 11, 11},  // L0
     {5, 7, 7, 7},   // L1
     {4, 5, 5, 5},  // L2
     {3, 4, 4, 4}  // L3
