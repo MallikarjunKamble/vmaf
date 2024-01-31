@@ -281,26 +281,26 @@ static const uint8_t i_hill_pending_div_factors[4][4] = {
 
 static const spat_fil_coeff_dtype i_watson_coeffs[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
-    {16384, 18226, 6177, 18226},
-    {16384, 16769, 7497, 16769},
+    {16384, 18226, 24707, 18226},
+    {16384, 16769, 29987, 16769},
 #else
     {16384, 22544, 23331, 22544},
     {16384, 27836, 24297, 27836},
 #endif
-    {16384, 22740, 12791, 22740},
+    {16384, 22740, 25582, 22740},
     {16384, 23946, 16417, 23946}
 };
 
 static const uint8_t i_watson_interim_shift[4][4] = {
-    {9, 9, 9, 9},
-    {11, 11, 11, 11},
-    {13, 13, 13, 13},
+    {9, 10, 12, 10},
+    {11, 11, 13, 11},
+    {13, 13, 14, 13},
     {13, 13, 13, 13}
 };
 
 static const uint8_t i_watson_pending_div_factors[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
-    {6, 12, 12, 12},  // L0
+    {6, 11, 11, 11},  // L0
     {5, 10, 10, 10},  // L1
 #else
     {6, 12, 12, 14},  // L0
