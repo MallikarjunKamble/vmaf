@@ -248,9 +248,9 @@ static const uint8_t i_li_pending_div_factors[4][4] = {
 
 static const spat_fil_coeff_dtype i_hill_coeffs[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
-    {16384, 22691, 10041, 22691},
-    {16384, -22164, 7134, -22164},
-    {16384, -8960, -26774, -8960},
+    {16384, 22691, 20082, 22691},
+    {16384, -22164, 28535, -22164},
+    {16384, -17920, -26774, -17920},
 #else
     {16384, 22691, 20082, 22691},
     {16384, -22164, 28535, -22164},
@@ -260,47 +260,47 @@ static const spat_fil_coeff_dtype i_hill_coeffs[4][4] = {
 };
 
 static const uint8_t i_hill_interim_shift[4][4] = {
-    {9, 9, 9, 9},
-    {11, 11, 11, 11},
-    {13, 13, 13, 13},
-    {13, 13, 13, 13},
+    {9, 9, 10, 9},
+    {11, 11, 13, 11},
+    {13, 15, 14, 15},
+    {13, 16, 16, 16},
 };
  
 static const uint8_t i_hill_pending_div_factors[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
     {6, 10, 10, 10},  // L0
     {5, 7, 7, 7},     // L1
-    {4, 7, 7, 7},     // L2
+    {4, 6, 6, 6},     // L2
 #else
     {6, 10, 10, 11},  // L0
     {5, 7, 7, 9},     // L1
     {4, 8, 8, 7},     // L2
 #endif
-    {3, 8, 8, 8}  // L3
+    {3, 5, 5, 5}  // L3
 };
 
 static const spat_fil_coeff_dtype i_watson_coeffs[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
-    {16384, 18226, 6177, 18226},
-    {16384, 16769, 7497, 16769},
+    {16384, 18226, 24707, 18226},
+    {16384, 16769, 29987, 16769},
 #else
     {16384, 22544, 23331, 22544},
     {16384, 27836, 24297, 27836},
 #endif
-    {16384, 22740, 12791, 22740},
+    {16384, 22740, 25582, 22740},
     {16384, 23946, 16417, 23946}
 };
 
 static const uint8_t i_watson_interim_shift[4][4] = {
-    {9, 9, 9, 9},
-    {11, 11, 11, 11},
-    {13, 13, 13, 13},
+    {9, 10, 12, 10},
+    {11, 11, 13, 11},
+    {13, 13, 14, 13},
     {13, 13, 13, 13}
 };
 
 static const uint8_t i_watson_pending_div_factors[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
-    {6, 12, 12, 12},  // L0
+    {6, 11, 11, 11},  // L0
     {5, 10, 10, 10},  // L1
 #else
     {6, 12, 12, 14},  // L0
@@ -323,7 +323,7 @@ static const spat_fil_coeff_dtype i_mannos_weight_coeffs[4][4] = {
 };
 
 static const uint8_t i_mannos_weight_interim_shift[4][4] = {
-    {9, 11, 16, 11},
+    {9, 12, 17, 12},
     {12, 12, 14, 12},
     {13, 13, 14, 13},
     {13, 13, 13, 13}
@@ -331,7 +331,7 @@ static const uint8_t i_mannos_weight_interim_shift[4][4] = {
 
 static const uint8_t i_mannos_weight_pending_div_factors[4][4] = {
 #if BAND_HVD_SAME_PENDING_DIV
-    {6, 12, 12, 12},  // L0
+    {6, 11, 11, 11},  // L0
     {5, 7, 7, 7},     // L1
 #else
     {6, 14, 14, 19},  // L0
