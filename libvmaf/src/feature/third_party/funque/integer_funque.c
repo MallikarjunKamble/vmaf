@@ -1071,17 +1071,17 @@ static int extract(VmafFeatureExtractor *fex,
         }
 
         if((s->adm_levels != 0) && (level <= s->adm_levels - 1)) {
-            err = integer_compute_adm_funque(
-                s->modules, s->i_ref_dwt2out[level], s->i_dist_dwt2out[level], &adm_score[level],
-                &adm_score_num[level], &adm_score_den[level], s->i_ref_dwt2out[level].width,
-                s->i_ref_dwt2out[level].height, ADM_BORDER_FACTOR, s->adm_div_lookup);
-
             float adm_pending_div = pending_div_factor;
             if(!s->enable_spatial_csf)
                 adm_pending_div = (1 << (s->csf_pending_div[level][1])) * bitdepth_pow2;
 
-            adm_num += adm_score_num[level] / adm_pending_div;
-            adm_den += adm_score_den[level] / adm_pending_div;
+            err = integer_compute_adm_funque(
+                s->modules, s->i_ref_dwt2out[level], s->i_dist_dwt2out[level], &adm_score[level],
+                &adm_score_num[level], &adm_score_den[level], s->i_ref_dwt2out[level].width,
+                s->i_ref_dwt2out[level].height, ADM_BORDER_FACTOR, s->adm_div_lookup, adm_pending_div);
+
+            adm_num += adm_score_num[level];
+            adm_den += adm_score_den[level];
 
             if(err)
                 return err;
