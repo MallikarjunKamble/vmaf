@@ -665,6 +665,7 @@ static int extract(VmafFeatureExtractor *fex,
 #endif
     double ssim_score[MAX_LEVELS];
     double motion_score[MAX_LEVELS];
+    double mad_score[MAX_LEVELS];    
 
     MsSsimScore ms_ssim_score[MAX_LEVELS];
     s->score = ms_ssim_score;
@@ -851,6 +852,10 @@ static int extract(VmafFeatureExtractor *fex,
                                 s->ref_dwt2out[level].width, s->ref_dwt2out[level].height, 
                                 s->prev_ref[level].stride, s->ref_dwt2out[level].stride, &motion_score[level]);
             }
+
+            err |= compute_mad_funque(s->ref_dwt2out[level].bands[0], s->dist_dwt2out[level].bands[0],
+                                s->ref_dwt2out[level].width, s->ref_dwt2out[level].height, 
+                                s->prev_ref[level].stride, s->ref_dwt2out[level].stride, &mad_score[level]);
         }
 
         if (err) return err;
@@ -991,6 +996,30 @@ if(s->motion_levels > 0) {
                     err |= vmaf_feature_collector_append_with_dict(
                         feature_collector, s->feature_name_dict,
                         "FUNQUE_feature_motion_scale3_score", motion_score[3], index);
+                }
+            }
+        }
+    }
+
+    {
+        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                       "FUNQUE_feature_mad_scale0_score",
+                                                       mad_score[0], index);
+
+        if(s->motion_levels > 1) {
+            err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                           "FUNQUE_feature_mad_scale1_score",
+                                                           mad_score[1], index);
+
+            if(s->motion_levels > 2) {
+                err |= vmaf_feature_collector_append_with_dict(
+                    feature_collector, s->feature_name_dict, "FUNQUE_feature_mad_scale2_score",
+                    mad_score[2], index);
+
+                if(s->motion_levels > 3) {
+                    err |= vmaf_feature_collector_append_with_dict(
+                        feature_collector, s->feature_name_dict,
+                        "FUNQUE_feature_mad_scale3_score", mad_score[3], index);
                 }
             }
         }
@@ -1161,6 +1190,12 @@ static const char *provided_features[] = {
     
     "FUNQUE_feature_motion_scale0_score", "FUNQUE_feature_motion_scale1_score",
     "FUNQUE_feature_motion_scale2_score", "FUNQUE_feature_motion_scale3_score",
+
+    "FUNQUE_feature_mad_scale0_score", "FUNQUE_feature_mad_scale1_score",
+    "FUNQUE_feature_mad_scale2_score", "FUNQUE_feature_mad_scale3_score",
+
+    "FUNQUE_feature_strred_scale0_score", "FUNQUE_feature_strred_scale1_score",
+    "FUNQUE_feature_strred_scale2_score", "FUNQUE_feature_strred_scale3_score",
 
     "FUNQUE_feature_ms_ssim_mean_scale0_score", "FUNQUE_feature_ms_ssim_mean_scale1_score",
     "FUNQUE_feature_ms_ssim_mean_scale2_score", "FUNQUE_feature_ms_ssim_mean_scale3_score",

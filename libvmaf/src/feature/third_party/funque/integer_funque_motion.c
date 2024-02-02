@@ -81,3 +81,30 @@ int integer_compute_motion_funque_c(const dwt2_dtype *prev, const dwt2_dtype *cu
 fail:
     return 1;
 }
+
+int integer_compute_mad_funque_c(const dwt2_dtype *ref, const dwt2_dtype *dis, int w, int h, int ref_stride, int dis_stride, int pending_div_factor_arg, double *score)
+{
+
+    float pending_div_factor = (1 << pending_div_factor_arg) * 255;
+
+    if (ref_stride % sizeof(dwt2_dtype) != 0)
+    {
+        printf("error: ref_stride %% sizeof(dwt2_dtype) != 0, ref_stride = %d, sizeof(dwt2_dtype) = %zu.\n", ref_stride, sizeof(dwt2_dtype));
+        fflush(stdout);
+        goto fail;
+    }
+    if (dis_stride % sizeof(dwt2_dtype) != 0)
+    {
+        printf("error: dis_stride %% sizeof(dwt2_dtype) != 0, dis_stride = %d, sizeof(dwt2_dtype) = %zu.\n", dis_stride, sizeof(dwt2_dtype));
+        fflush(stdout);
+        goto fail;
+    }
+    // stride for integer_funque_image_mad_c is in terms of (sizeof(dwt2_dtype) bytes)
+
+    *score = integer_funque_image_mad_c(ref, dis, w, h, ref_stride / sizeof(dwt2_dtype), dis_stride / sizeof(dwt2_dtype), pending_div_factor);
+
+    return 0;
+
+fail:
+    return 1;
+}
