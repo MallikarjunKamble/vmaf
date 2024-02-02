@@ -122,7 +122,7 @@ int integer_compute_srred_funque_c(const struct i_dwt2buffers *ref,
                                    float **spat_scales_ref, float **spat_scales_dist,
                                    struct strred_results *strred_scores, int block_size, int level,
                                    uint32_t *log_18, uint32_t *log_22, int32_t shift_val_arg,
-                                   double sigma_nsq_t, uint8_t check_enable_spatial_csf)
+                                   double sigma_nsq_t, uint8_t check_enable_spatial_csf, uint8_t csf_pending_div[4])
 {
     int ret;
     UNUSED(block_size);
@@ -139,7 +139,7 @@ int integer_compute_srred_funque_c(const struct i_dwt2buffers *ref,
         if(check_enable_spatial_csf == 1)
             shift_val = 2 * shift_val_arg;
         else {
-            shift_val = 2 * i_nadenau_pending_div_factors[level][subband];
+            shift_val = 2 * csf_pending_div[subband];
         }
         spat_values[subband] = integer_rred_entropies_and_scales(
             ref->bands[subband], dist->bands[subband], width, height, log_18, log_22, sigma_nsq_t,
@@ -169,7 +169,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     float **spat_scales_dist, struct strred_results *strred_scores,
                                     int block_size, int level, uint32_t *log_18, uint32_t *log_22,
                                     int32_t shift_val_arg, double sigma_nsq_t,
-                                    uint8_t check_enable_spatial_csf)
+                                    uint8_t check_enable_spatial_csf, uint8_t csf_pending_div[4])
 {
     int ret;
     UNUSED(block_size);
@@ -183,7 +183,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
         if(check_enable_spatial_csf == 1)
             shift_val = 2 * shift_val_arg;
         else {
-            shift_val = 2 * i_nadenau_pending_div_factors[level][subband];
+            shift_val = 2 * csf_pending_div[subband];
         }
 
         if(prev_ref != NULL && prev_dist != NULL) {

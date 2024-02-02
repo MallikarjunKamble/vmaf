@@ -81,7 +81,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define ENABLE_SIMD_PROFILING 1
+#define ENABLE_SIMD_PROFILING 0
 
 typedef struct IntFunqueState
 {
@@ -102,6 +102,7 @@ typedef struct IntFunqueState
     spat_fil_coeff_dtype csf_factors[4][4];
     uint16_t csf_interim_rnd[4][4];
     uint8_t csf_interim_shift[4][4];
+    uint8_t csf_pending_div[4][4];  
 
     spat_fil_inter_dtype *spat_tmp_buf;
     spat_fil_output_dtype *filter_buffer;
@@ -497,15 +498,20 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_nadenau_weight_coeffs[level][2];
                 s->csf_factors[level][3] = i_nadenau_weight_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_nadenau_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_nadenau_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_nadenau_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_nadenau_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_nadenau_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_nadenau_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_nadenau_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_nadenau_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_nadenau_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_nadenau_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_nadenau_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_nadenau_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "li") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -514,15 +520,20 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_li_coeffs[level][2];
                 s->csf_factors[level][3] = i_li_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_li_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_li_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_li_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_li_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_li_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_li_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_li_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_li_interim_shift[level][3] - 1);
+            
+                s->csf_pending_div[level][0] = i_li_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_li_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_li_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_li_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "hill") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -531,15 +542,20 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_hill_coeffs[level][2];
                 s->csf_factors[level][3] = i_hill_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_hill_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_hill_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_hill_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_hill_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_hill_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_hill_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_hill_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_hill_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_hill_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_hill_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_hill_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_hill_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "watson") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -548,15 +564,20 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_watson_coeffs[level][2];
                 s->csf_factors[level][3] = i_watson_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_watson_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_watson_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_watson_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_watson_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_watson_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_watson_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_watson_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_watson_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_watson_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_watson_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_watson_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_watson_pending_div_factors[level][3];
             }
         } else if(strcmp(s->wavelet_csf_filter_type, "mannos_weight") == 0) {
             for(int level = 0; level < 4; level++) {
@@ -565,15 +586,20 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
                 s->csf_factors[level][2] = i_mannos_weight_coeffs[level][2];
                 s->csf_factors[level][3] = i_mannos_weight_coeffs[level][3];
 
-                s->csf_interim_shift[level][0] = i_interim_shift[level][0];
-                s->csf_interim_shift[level][1] = i_interim_shift[level][1];
-                s->csf_interim_shift[level][2] = i_interim_shift[level][2];
-                s->csf_interim_shift[level][3] = i_interim_shift[level][3];
+                s->csf_interim_shift[level][0] = i_mannos_weight_interim_shift[level][0];
+                s->csf_interim_shift[level][1] = i_mannos_weight_interim_shift[level][1];
+                s->csf_interim_shift[level][2] = i_mannos_weight_interim_shift[level][2];
+                s->csf_interim_shift[level][3] = i_mannos_weight_interim_shift[level][3];
 
-                s->csf_interim_rnd[level][0] = 1 << (i_interim_shift[level][0] - 1);
-                s->csf_interim_rnd[level][1] = 1 << (i_interim_shift[level][1] - 1);
-                s->csf_interim_rnd[level][2] = 1 << (i_interim_shift[level][2] - 1);
-                s->csf_interim_rnd[level][3] = 1 << (i_interim_shift[level][3] - 1);
+                s->csf_interim_rnd[level][0] = 1 << (i_mannos_weight_interim_shift[level][0] - 1);
+                s->csf_interim_rnd[level][1] = 1 << (i_mannos_weight_interim_shift[level][1] - 1);
+                s->csf_interim_rnd[level][2] = 1 << (i_mannos_weight_interim_shift[level][2] - 1);
+                s->csf_interim_rnd[level][3] = 1 << (i_mannos_weight_interim_shift[level][3] - 1);
+
+                s->csf_pending_div[level][0] = i_mannos_weight_pending_div_factors[level][0];
+                s->csf_pending_div[level][1] = i_mannos_weight_pending_div_factors[level][1];
+                s->csf_pending_div[level][2] = i_mannos_weight_pending_div_factors[level][2];
+                s->csf_pending_div[level][3] = i_mannos_weight_pending_div_factors[level][3];
             }
         }
     }
@@ -1125,31 +1151,57 @@ static int extract(VmafFeatureExtractor *fex,
     for(int level = 0; level < s->needed_dwt_levels; level++) {
         // TODO: Need to modify for crop width and height
         if((s->adm_levels != 0) && (level <= s->adm_levels - 1)) {
+            float adm_pending_div = pending_div_factor;
+            if(!s->enable_spatial_csf)
+                adm_pending_div = (1 << (s->csf_pending_div[level][1])) * bitdepth_pow2;
+
             err = integer_compute_adm_funque(
                 s->modules, s->i_ref_dwt2out[level], s->i_dist_dwt2out[level], &adm_score[level],
                 &adm_score_num[level], &adm_score_den[level], s->i_ref_dwt2out[level].width,
-                s->i_ref_dwt2out[level].height, ADM_BORDER_FACTOR, s->adm_div_lookup);
+                s->i_ref_dwt2out[level].height, ADM_BORDER_FACTOR, s->adm_div_lookup, adm_pending_div);
 
-            float adm_pending_div = pending_div_factor;
-            if(!s->enable_spatial_csf)
-                adm_pending_div = (1 << (i_nadenau_pending_div_factors[level][1])) * bitdepth_pow2;
-
-            adm_num += adm_score_num[level] / adm_pending_div;
-            adm_den += adm_score_den[level] / adm_pending_div;
+            adm_num += adm_score_num[level];
+            adm_den += adm_score_den[level];
 
             if(err)
                 return err;
         }
-
         if((s->ms_ssim_levels != 0) && (level < s->ms_ssim_levels)) {
+            int pending_div_c1 = (int) pending_div_factor >> (level);
+            int pending_div_c2 = (int) pending_div_factor >> (level);
+            int pending_div_offset = 0;
+            int pending_div_halfround = 0;
+            if(s->enable_spatial_csf == false) {
+                pending_div_c1 = (1 << s->csf_pending_div[level][0]) * 255;
+                pending_div_c2 = (1 << (s->csf_pending_div[level][1] + (level))) * 255;
+                pending_div_offset = 2 * (s->csf_pending_div[level][3] - s->csf_pending_div[level][1]);
+                pending_div_halfround = (pending_div_offset == 0) ? 0 : (1 << (pending_div_offset - 1));
+            }
             err = s->modules.integer_compute_ms_ssim_funque(
                 &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &ms_ssim_score[level], 1, 0.01,
-                0.03, pending_div_factor, s->adm_div_lookup, (level + 1),
+                0.03, pending_div_c1, pending_div_c2, pending_div_offset, pending_div_halfround, s->adm_div_lookup, (level + 1),
                 (int) (s->enable_spatial_csf == false));
-
             err = s->modules.integer_mean_2x2_ms_ssim_funque(var_x_cum, var_y_cum, cov_xy_cum,
                                                              s->i_ref_dwt2out[level].width,
-                                                             s->i_ref_dwt2out[level].height, level);
+                                                             s->i_ref_dwt2out[level].height, level);                                                
+            if((level < s->ms_ssim_levels) && (s->enable_spatial_csf == false)) {
+                int cum_array_width = (s->i_ref_dwt2out[level].width) * (1 << (level + 1));
+                int index_cum = 0;
+                int shift_cums = 2 * (s->csf_pending_div[level][1] -
+                                  s->csf_pending_div[level+1][1] - 1);
+                for(int i = 0; i < s->i_ref_dwt2out[level].height; i++) {
+                    for(int j = 0; j < s->i_ref_dwt2out[level].width; j++) {
+                        var_x_cum[index_cum] =
+                            (var_x_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+                        var_y_cum[index_cum] =
+                            (var_y_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+                        cov_xy_cum[index_cum] =
+                            (cov_xy_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+                        index_cum++;
+                }
+                index_cum += (cum_array_width - s->i_ref_dwt2out[level].width);
+                }
+            }
 
             if(level != s->ms_ssim_levels - 1) {
                 ms_ssim_score[level + 1].var_x_cum = ms_ssim_score[level].var_x_cum;
@@ -1165,9 +1217,8 @@ static int extract(VmafFeatureExtractor *fex,
                 ssim_pending_div =
                     ((1 << (spatfilter_shifts + dwt_shifts)) * bitdepth_pow2) >> level;
             } else {
-                ssim_pending_div = (1 << i_nadenau_pending_div_factors[level][0]) * 255;
-                k2 = k2 * (1 << (i_nadenau_pending_div_factors[level][1] -
-                                 i_nadenau_pending_div_factors[level][0]));
+                ssim_pending_div = (1 << s->csf_pending_div[level][0]) * 255;
+                k2 = k2 * (1 << (s->csf_pending_div[level][1] - s->csf_pending_div[level][0]));
             }
             err = s->modules.integer_compute_ssim_funque(
                 &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &ssim_score[level], 1, k1, k2,
@@ -1182,7 +1233,7 @@ static int extract(VmafFeatureExtractor *fex,
             if(s->enable_spatial_csf) {
                 vif_pending_div = (1 << (spatfilter_shifts + dwt_shifts - level)) * bitdepth_pow2;
             } else {
-                vif_pending_div = (1 << (i_nadenau_pending_div_factors[level][0])) * bitdepth_pow2;
+                vif_pending_div = (1 << (s->csf_pending_div[level][0])) * bitdepth_pow2;
             }
 #if USE_DYNAMIC_SIGMA_NSQ
             err = s->modules.integer_compute_vif_funque(
@@ -1211,7 +1262,7 @@ static int extract(VmafFeatureExtractor *fex,
                 &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], s->i_ref_dwt2out[level].width,
                 s->i_ref_dwt2out[level].height, spat_scales_ref[level], spat_scales_dist[level],
                 &s->strred_scores, BLOCK_SIZE, level, s->log_18, s->log_22, strred_pending_div,
-                (double) 0.1, s->enable_spatial_csf);
+                (double) 0.1, s->enable_spatial_csf, s->csf_pending_div[level]);
 
             if(err)
                 return err;
@@ -1264,7 +1315,7 @@ static int extract(VmafFeatureExtractor *fex,
                     &s->i_prev_dist[level], s->i_ref_dwt2out[level].width,
                     s->i_ref_dwt2out[level].height, spat_scales_ref[level], spat_scales_dist[level],
                     &s->strred_scores, BLOCK_SIZE, level, s->log_18, s->log_22, strred_pending_div,
-                    (double) 0.1, s->enable_spatial_csf);
+                    (double) 0.1, s->enable_spatial_csf, s->csf_pending_div[level]);
             }
             if(err)
                 return err;

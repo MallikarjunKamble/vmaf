@@ -32,7 +32,7 @@ int integer_compute_srred_funque_c(const struct i_dwt2buffers *ref,
                                    float **spat_scales_ref, float **spat_scales_dist,
                                    struct strred_results *strred_scores, int block_size, int level,
                                    uint32_t *log_18, uint32_t *log_22, int32_t shift_val,
-                                   double sigma_nsq_t, uint8_t enable_spatial_csf);
+                                   double sigma_nsq_t, uint8_t enable_spatial_csf, uint8_t csf_pending_div[4]);
 
 int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     const struct i_dwt2buffers *dist,
@@ -41,7 +41,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     float **spat_scales_dist, struct strred_results *strred_scores,
                                     int block_size, int level, uint32_t *log_18, uint32_t *log_22,
                                     int32_t shift_val, double sigma_nsq_t,
-                                    uint8_t enable_spatial_csf);
+                                    uint8_t enable_spatial_csf, uint8_t csf_pending_div[4]);
 
 int integer_copy_prev_frame_strred_funque_c(const struct i_dwt2buffers *ref,
                                             const struct i_dwt2buffers *dist,
