@@ -72,3 +72,27 @@ int compute_motion_funque(const float *prev, const float *curr, int w, int h, in
 fail:
     return 1;
 }
+
+int compute_mad_funque(const float *ref, const float *dis, int w, int h, int ref_stride, int dis_stride, double *score)
+{
+
+    if (ref_stride % sizeof(float) != 0)
+    {
+        printf("error: ref_stride %% sizeof(float) != 0, ref_stride = %d, sizeof(float) = %zu.\n", ref_stride, sizeof(float));
+        fflush(stdout);
+        goto fail;
+    }
+    if (dis_stride % sizeof(float) != 0)
+    {
+        printf("error: dis_stride %% sizeof(float) != 0, dis_stride = %d, sizeof(float) = %zu.\n", dis_stride, sizeof(float));
+        fflush(stdout);
+        goto fail;
+    }
+    // stride for funque_image_mad_c is in terms of (sizeof(float) bytes)
+    *score = funque_image_mad_c(ref, dis, w, h, ref_stride / sizeof(float), dis_stride / sizeof(float));
+
+    return 0;
+
+fail:
+    return 1;
+}
