@@ -86,6 +86,7 @@ typedef struct FunqueState {
     int ref_display_height;
     int strred_levels;
     int motion_levels;
+    int mad_levels;
     int process_ref_width;
     int process_ref_height;
     int process_dist_width;
@@ -268,6 +269,16 @@ static const VmafOption options[] = {
         .min = MIN_LEVELS,
         .max = MAX_LEVELS,
     },
+    {
+        .name = "mad_levels",
+        .alias = "mad",
+        .help = "Number of levels in Mean absolute difference",
+        .offset = offsetof(FunqueState, mad_levels),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = DEFAULT_MAD_LEVELS,
+        .min = MIN_LEVELS,
+        .max = MAX_LEVELS,
+    },
     { 0 }
 };
 
@@ -352,7 +363,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         h = (h+1)>>1;
     }
 
-    s->needed_dwt_levels = MAX5(s->vif_levels, s->adm_levels, s->ssim_levels, s->ms_ssim_levels, s->strred_levels, s->motion_levels);
+    s->needed_dwt_levels = MAX7(s->vif_levels, s->adm_levels, s->ssim_levels, s->ms_ssim_levels, s->strred_levels, s->motion_levels, s->mad_levels);
     s->needed_full_dwt_levels = MAX(s->adm_levels, s->ssim_levels);
 
     int ref_process_width, ref_process_height, dist_process_width, dist_process_height, process_wh_div_factor;
@@ -1000,23 +1011,25 @@ if(s->motion_levels > 0) {
             }
         }
     }
+}
 
+if(s->mad_levels > 0){
     {
         err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                        "FUNQUE_feature_mad_scale0_score",
                                                        mad_score[0], index);
 
-        if(s->motion_levels > 1) {
+        if(s->mad_levels > 1) {
             err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                            "FUNQUE_feature_mad_scale1_score",
                                                            mad_score[1], index);
 
-            if(s->motion_levels > 2) {
+            if(s->mad_levels > 2) {
                 err |= vmaf_feature_collector_append_with_dict(
                     feature_collector, s->feature_name_dict, "FUNQUE_feature_mad_scale2_score",
                     mad_score[2], index);
 
-                if(s->motion_levels > 3) {
+                if(s->mad_levels > 3) {
                     err |= vmaf_feature_collector_append_with_dict(
                         feature_collector, s->feature_name_dict,
                         "FUNQUE_feature_mad_scale3_score", mad_score[3], index);

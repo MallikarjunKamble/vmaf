@@ -24,7 +24,8 @@
                 "ssim_levels": 4,
                 "ms_ssim_levels": 4,
                 "strred_levels": 4,
-                "motion_levels": 4
+                "motion_levels": 4,
+                "mad_levels": 4
             }
         ],
         "feature_names": [

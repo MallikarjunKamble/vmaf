@@ -125,6 +125,7 @@ typedef struct IntFunqueState
     int ms_ssim_levels;
     int strred_levels;
     int motion_levels;
+    int mad_levels;
     double norm_view_dist;
     int ref_display_height;
     int i_process_ref_width;
@@ -326,6 +327,16 @@ static const VmafOption options[] = {
         .min = MIN_LEVELS,
         .max = MAX_LEVELS,
     },
+    {
+        .name = "mad_levels",
+        .alias = "mad",
+        .help = "Number of levels in Mean absolute difference",
+        .offset = offsetof(IntFunqueState, mad_levels),
+        .type = VMAF_OPT_TYPE_INT,
+        .default_val.i = DEFAULT_MAD_LEVELS,
+        .min = MIN_LEVELS,
+        .max = MAX_LEVELS,
+    },
 
     {0}};
 
@@ -409,7 +420,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     }
 
     s->needed_dwt_levels =
-        MAX5(s->vif_levels, s->adm_levels, s->ssim_levels, s->ms_ssim_levels, s->strred_levels, s->motion_levels);
+        MAX7(s->vif_levels, s->adm_levels, s->ssim_levels, s->ms_ssim_levels, s->strred_levels, s->motion_levels, s->mad_levels);
     s->needed_full_dwt_levels = MAX(s->adm_levels, s->ssim_levels);
 
     int ref_process_width, ref_process_height, dist_process_width, dist_process_height,
@@ -1275,19 +1286,17 @@ static int extract(VmafFeatureExtractor *fex,
                 return err;
         }
 
-        // if((s->motion_levels != 0) && (level <= s->motion_levels - 1)) {
-        //     float motion_pending_div = spatfilter_shifts + dwt_shifts - level;
-        //     if(!s->enable_spatial_csf)
-        //         motion_pending_div = (1 << (i_nadenau_pending_div_factors[level][0])) * bitdepth_pow2;
+        if((s->mad_levels != 0) && (level <= s->mad_levels - 1)) {
+            float motion_pending_div = spatfilter_shifts + dwt_shifts - level;
+            if(!s->enable_spatial_csf)
+                motion_pending_div = s->csf_pending_div[level][0];
 
-        //     if(index != 0) {
-        //         err |= s->modules.integer_compute_motion_funque(s->i_prev_ref[level].bands[0], s->i_ref_dwt2out[level].bands[0], 
-        //                         s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, 
-        //                         s->i_prev_ref[level].stride, s->i_ref_dwt2out[level].stride, motion_pending_div, &motion_score[level]);
-        //     }
-        //     if(err)
-        //         return err;
-        // }
+            err |= s->modules.integer_compute_mad_funque(s->i_ref_dwt2out[level].bands[0], s->i_dist_dwt2out[level].bands[0],
+                                s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, 
+                                s->i_prev_ref[level].stride, s->i_ref_dwt2out[level].stride, motion_pending_div, &mad_score[level]);
+            if(err)
+                return err;
+        }
     }
 
     dwt2_dtype *dependent_buf, *dependent_buf_temp;
@@ -1331,19 +1340,13 @@ static int extract(VmafFeatureExtractor *fex,
         if((s->motion_levels != 0) && (level <= s->motion_levels - 1)) {
             float motion_pending_div = spatfilter_shifts + dwt_shifts - level;
             if(!s->enable_spatial_csf)
-                motion_pending_div = (i_nadenau_pending_div_factors[level][0]);
+                motion_pending_div = s->csf_pending_div[level][0];
 
             if(index != 0) {
                 err |= s->modules.integer_compute_motion_funque(s->i_prev_ref[level].bands[0], s->i_ref_dwt2out[level].bands[0], 
                                 s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, 
                                 s->i_prev_ref[level].stride, s->i_ref_dwt2out[level].stride, motion_pending_div, &motion_score[level]);
             }
-
-            err |= s->modules.integer_compute_mad_funque(s->i_ref_dwt2out[level].bands[0], s->i_dist_dwt2out[level].bands[0],
-                                s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, 
-                                s->i_prev_ref[level].stride, s->i_ref_dwt2out[level].stride, motion_pending_div, &mad_score[level]);
-            if(err)
-                return err;
         }
     }
 
@@ -1463,23 +1466,27 @@ static int extract(VmafFeatureExtractor *fex,
                 }
             }
         }
+
+    }
+
+    if(s->mad_levels > 0){
         {
             err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                        "FUNQUE_integer_feature_mad_scale0_score",
                                                        mad_score[0], index);
-            if(s->motion_levels > 1) {
+            if(s->mad_levels > 1) {
                 err |= vmaf_feature_collector_append_with_dict(
                     feature_collector, s->feature_name_dict,
                     "FUNQUE_integer_feature_mad_scale1_score", mad_score[1],
                     index);
 
-                if(s->motion_levels > 2) {
+                if(s->mad_levels > 2) {
                     err |= vmaf_feature_collector_append_with_dict(
                         feature_collector, s->feature_name_dict,
                         "FUNQUE_integer_feature_mad_scale2_score", mad_score[2],
                         index);
 
-                    if(s->motion_levels > 3) {
+                    if(s->mad_levels > 3) {
                         err |= vmaf_feature_collector_append_with_dict(
                             feature_collector, s->feature_name_dict,
                             "FUNQUE_integer_feature_mad_scale3_score",
@@ -1488,7 +1495,6 @@ static int extract(VmafFeatureExtractor *fex,
                 }
             }
         }
-
     }
 
     if(s->strred_levels > 0) {
