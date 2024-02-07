@@ -113,7 +113,7 @@ static inline int16_t get_best_i16_from_u64(uint64_t temp, int *power)
     return (int16_t) temp;
 }
 
-int integer_compute_ssim_funque_avx512(i_dwt2buffers *ref, i_dwt2buffers *dist, double *score, int max_val, float K1, float K2, int pending_div, int32_t *div_lookup)
+int integer_compute_ssim_funque_avx512(i_dwt2buffers *ref, i_dwt2buffers *dist, SsimScore_int *score, int max_val, float K1, float K2, int pending_div, int32_t *div_lookup)
 {
     int ret = 1;
 
@@ -145,7 +145,6 @@ int integer_compute_ssim_funque_avx512(i_dwt2buffers *ref, i_dwt2buffers *dist, 
     ssim_inter_dtype var_x_band0, var_y_band0, cov_xy_band0;
     ssim_inter_dtype l_num, l_den, cs_num, cs_den;
 
-#if ENABLE_MINK3POOL
     ssim_accum_dtype rowcube_1minus_map = 0;
     double accumcube_1minus_map = 0;
     const ssim_inter_dtype const_1 = 32768;  // div_Q_factor>>SSIM_SHIFT_DIV
@@ -158,9 +157,9 @@ int integer_compute_ssim_funque_avx512(i_dwt2buffers *ref, i_dwt2buffers *dist, 
 
     __m128i const_1_128 = _mm_set1_epi64x(32768);
     __m128i accum_rowcube_128 = _mm_setzero_si128();
-#else
+
     ssim_accum_dtype accum_map = 0;
-#endif
+
     __m512i C1_512 = _mm512_set1_epi32(C1);
     __m512i C2_512 = _mm512_set1_epi32(C2);
     __m512i constant_2 = _mm512_set1_epi32(2);
@@ -350,15 +349,12 @@ int integer_compute_ssim_funque_avx512(i_dwt2buffers *ref, i_dwt2buffers *dist, 
             i16_map_den = get_best_i16_from_u64((uint64_t) denVal[k], &power_val);
             map = ((numVal[k] >> power_val) * div_lookup[i16_map_den + 32768]) >> SSIM_SHIFT_DIV;
 
-#if ENABLE_MINK3POOL
             ssim_accum_dtype const1_minus_map = const_1 - map;
             rowcube_1minus_map += const1_minus_map * const1_minus_map * const1_minus_map;
-#else
+
             accum_map += map;
             // map_sq_insum += (ssim_accum_dtype)(((ssim_accum_dtype)map * map));
-#endif
         }
-#if ENABLE_MINK3POOL
         __m256i r4 = _mm256_add_epi64(_mm512_castsi512_si256(accum_rowcube_512),
                                       _mm512_extracti64x4_epi64(accum_rowcube_512, 1));
         r4 = _mm256_add_epi64(r4, accum_rowcube_256);
@@ -369,15 +365,12 @@ int integer_compute_ssim_funque_avx512(i_dwt2buffers *ref, i_dwt2buffers *dist, 
         accum_rowcube_256 = _mm256_setzero_si256();
         accum_rowcube_128 = _mm_setzero_si128();
         rowcube_1minus_map = 0;
-#endif
     }
 
-#if ENABLE_MINK3POOL
     double ssim_val = 1 - cbrt(accumcube_1minus_map / (width * height)) / const_1;
-    *score = ssim_clip(ssim_val, 0, 1);
-#else
-    *score = (double) accum_map / (height * width) / (1 << SSIM_SHIFT_DIV);
-#endif
+    score->mink3 = ssim_clip(ssim_val, 0, 1);
+
+    score->mean = (double) accum_map / (height * width) / (1 << SSIM_SHIFT_DIV);
 
     free(numVal);
     free(denVal);

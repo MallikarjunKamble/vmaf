@@ -91,6 +91,11 @@ typedef struct i_dwt2buffers {
     int stride;
 }i_dwt2buffers;
 
+typedef struct SsimScore_int {
+    double mean;
+    double mink3;
+} SsimScore_int;
+
 typedef struct MsSsimScore_int {
     double ssim_mean;
     double l_mean;
@@ -138,7 +143,7 @@ typedef struct ModuleFunqueState
                                             int max_theta, uint16_t interim_rnd_factors[4],
                                             uint8_t interim_shift_factors[4], int level);
     void (*integer_funque_vifdwt2_band0)(dwt2_dtype *src, dwt2_dtype *band_a, ptrdiff_t dst_stride, int width, int height);
-    int (*integer_compute_ssim_funque)(i_dwt2buffers *ref, i_dwt2buffers *dist, double *score, int max_val, float K1, float K2, int pending_div, int32_t *div_lookup);
+    int (*integer_compute_ssim_funque)(i_dwt2buffers *ref, i_dwt2buffers *dist, SsimScore_int *score, int max_val, float K1, float K2, int pending_div, int32_t *div_lookup);
     int (*integer_compute_ms_ssim_funque)(i_dwt2buffers *ref, i_dwt2buffers *dist,
                                           MsSsimScore_int *score, int max_val, float K1, float K2,
                                           int pending_div_c1, int pending_div_c2, int pending_div_offset, 
