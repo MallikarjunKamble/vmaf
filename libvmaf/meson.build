@@ -17,7 +17,6 @@ vmaf_api_version_revision = vmaf_api_version_array[2]
 libvmaf_src_root = meson.current_source_dir()
 cc = meson.get_compiler('c')
 libvmaf_inc = include_directories(['include'])
-add_project_arguments('-mavx512f', language: 'c')
 
 # Arguments in test_args will be used even on feature tests
 test_args = []

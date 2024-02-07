@@ -665,6 +665,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     s->modules.integer_compute_ssim_funque = integer_compute_ssim_funque_c;
     s->modules.integer_compute_ms_ssim_funque = integer_compute_ms_ssim_funque_c;
     s->modules.integer_mean_2x2_ms_ssim_funque = integer_mean_2x2_ms_ssim_funque_c;
+    s->modules.integer_ms_ssim_shift_cum_buffer_funque = integer_ms_ssim_shift_cum_buffer_funque_c;
     s->modules.integer_compute_motion_funque = integer_compute_motion_funque_c;
     s->modules.integer_compute_mad_funque = integer_compute_mad_funque_c;
     s->modules.integer_funque_adm_decouple = integer_adm_decouple_c;
@@ -694,6 +695,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->modules.integer_compute_ssim_funque = integer_compute_ssim_funque_c;
         s->modules.integer_compute_ms_ssim_funque = integer_compute_ms_ssim_funque_c;
         s->modules.integer_mean_2x2_ms_ssim_funque = integer_mean_2x2_ms_ssim_funque_neon;
+        s->modules.integer_ms_ssim_shift_cum_buffer_funque = integer_ms_ssim_shift_cum_buffer_funque_neon;
         s->modules.integer_funque_adm_decouple = integer_adm_decouple_neon;
         s->modules.integer_compute_vif_funque = integer_compute_vif_funque_neon;
         //Commenting this since C was performing better
@@ -719,6 +721,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->modules.integer_compute_ssim_funque = integer_compute_ssim_funque_c;
         s->modules.integer_compute_ms_ssim_funque = integer_compute_ms_ssim_funque_c;
         s->modules.integer_mean_2x2_ms_ssim_funque = integer_mean_2x2_ms_ssim_funque_c;
+        s->modules.integer_ms_ssim_shift_cum_buffer_funque = integer_ms_ssim_shift_cum_buffer_funque_c;
         s->modules.integer_funque_adm_decouple = integer_adm_decouple_c;
         s->modules.integer_compute_motion_funque = integer_compute_motion_funque_c;
         s->modules.integer_compute_mad_funque = integer_compute_mad_funque_c;
@@ -755,6 +758,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->modules.integer_compute_ssim_funque = integer_compute_ssim_funque_avx2;
         s->modules.integer_compute_ms_ssim_funque = integer_compute_ms_ssim_funque_avx2;
         s->modules.integer_mean_2x2_ms_ssim_funque = integer_mean_2x2_ms_ssim_funque_avx2;
+        s->modules.integer_ms_ssim_shift_cum_buffer_funque = integer_ms_ssim_shift_cum_buffer_funque_avx2;
         s->modules.integer_funque_adm_decouple = integer_adm_decouple_avx2;
         s->modules.integer_compute_motion_funque = integer_compute_motion_funque_c;
         s->modules.integer_compute_mad_funque = integer_compute_mad_funque_c;
@@ -778,6 +782,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->modules.integer_compute_ssim_funque = integer_compute_ssim_funque_c;
         s->modules.integer_compute_ms_ssim_funque = integer_compute_ms_ssim_funque_c;
         s->modules.integer_mean_2x2_ms_ssim_funque = integer_mean_2x2_ms_ssim_funque_c;
+        s->modules.integer_ms_ssim_shift_cum_buffer_funque = integer_ms_ssim_shift_cum_buffer_funque_c;
         s->modules.integer_funque_adm_decouple = integer_adm_decouple_c;
         s->modules.integer_compute_motion_funque = integer_compute_motion_funque_c;
         s->modules.integer_compute_mad_funque = integer_compute_mad_funque_c;
@@ -805,6 +810,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->modules.integer_compute_ssim_funque = integer_compute_ssim_funque_avx512;
         s->modules.integer_compute_ms_ssim_funque = integer_compute_ms_ssim_funque_avx512;
         s->modules.integer_mean_2x2_ms_ssim_funque = integer_mean_2x2_ms_ssim_funque_avx512;
+        s->modules.integer_ms_ssim_shift_cum_buffer_funque = integer_ms_ssim_shift_cum_buffer_funque_avx512;
         s->modules.integer_funque_adm_decouple = integer_adm_decouple_avx512;
         s->modules.integer_compute_motion_funque = integer_compute_motion_funque_c;
         s->modules.integer_compute_mad_funque = integer_compute_mad_funque_c;
@@ -829,6 +835,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
         s->modules.integer_compute_ssim_funque = integer_compute_ssim_funque_c;
         s->modules.integer_compute_ms_ssim_funque = integer_compute_ms_ssim_funque_c;
         s->modules.integer_mean_2x2_ms_ssim_funque = integer_mean_2x2_ms_ssim_funque_c;
+        s->modules.integer_ms_ssim_shift_cum_buffer_funque = integer_ms_ssim_shift_cum_buffer_funque_c;
         s->modules.integer_funque_adm_decouple = integer_adm_decouple_c;
         s->modules.integer_compute_motion_funque = integer_compute_motion_funque_c;
         s->modules.integer_compute_mad_funque = integer_compute_mad_funque_c;
@@ -1201,24 +1208,11 @@ static int extract(VmafFeatureExtractor *fex,
                 (int) (s->enable_spatial_csf == false));
             err = s->modules.integer_mean_2x2_ms_ssim_funque(var_x_cum, var_y_cum, cov_xy_cum,
                                                              s->i_ref_dwt2out[level].width,
-                                                             s->i_ref_dwt2out[level].height, level);                                                
+                                                             s->i_ref_dwt2out[level].height, level);
             if((level < s->ms_ssim_levels) && (s->enable_spatial_csf == false)) {
-                int cum_array_width = (s->i_ref_dwt2out[level].width) * (1 << (level + 1));
-                int index_cum = 0;
-                int shift_cums = 2 * (s->csf_pending_div[level][1] -
-                                  s->csf_pending_div[level+1][1] - 1);
-                for(int i = 0; i < s->i_ref_dwt2out[level].height; i++) {
-                    for(int j = 0; j < s->i_ref_dwt2out[level].width; j++) {
-                        var_x_cum[index_cum] =
-                            (var_x_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
-                        var_y_cum[index_cum] =
-                            (var_y_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
-                        cov_xy_cum[index_cum] =
-                            (cov_xy_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
-                        index_cum++;
-                }
-                index_cum += (cum_array_width - s->i_ref_dwt2out[level].width);
-                }
+            err = s->modules.integer_ms_ssim_shift_cum_buffer_funque(var_x_cum, var_y_cum, cov_xy_cum, s->i_ref_dwt2out[level].width,
+                                                                     s->i_ref_dwt2out[level].height, level, s->csf_pending_div[level],
+                                                                     s->csf_pending_div[level + 1]);
             }
 
             if(level != s->ms_ssim_levels - 1) {

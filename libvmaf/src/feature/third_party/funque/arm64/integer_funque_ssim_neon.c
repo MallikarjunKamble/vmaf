@@ -692,3 +692,53 @@ int integer_mean_2x2_ms_ssim_funque_neon(int32_t *var_x_cum, int32_t *var_y_cum,
     ret = 0;
     return ret;
 }
+
+int integer_ms_ssim_shift_cum_buffer_funque_neon(int32_t *var_x_cum, int32_t *var_y_cum, int32_t *cov_xy_cum,
+                                                 int width, int height, int level, uint8_t csf_pending_div[4],
+                                                 uint8_t csf_pending_div_lp1[4])
+{
+    int cum_array_width = width * (1 << (level + 1));
+    int shift_cums = 2 * (csf_pending_div[1] - csf_pending_div_lp1[1] - 1);
+    int i, j;
+    int index_cum = 0;
+
+    int32x4_t add_constant = vdupq_n_s32(1 << (shift_cums - 1));
+    int32x4_t shift_constant = vdupq_n_s32(-shift_cums);
+
+    for(i = 0; i < height; i++)
+    {
+        for(j = 0; j < width - 8; j += 8)
+        {
+            int32x4_t var_x_cum_32x4_0 = vld1q_s32(var_x_cum + index_cum);
+            int32x4_t var_y_cum_32x4_0 = vld1q_s32(var_y_cum + index_cum);
+            int32x4_t cov_xy_cum_32x4_0 = vld1q_s32(cov_xy_cum + index_cum);
+            int32x4_t var_x_cum_32x4_1 = vld1q_s32(var_x_cum + index_cum + 4);
+            int32x4_t var_y_cum_32x4_1 = vld1q_s32(var_y_cum + index_cum + 4);
+            int32x4_t cov_xy_cum_32x4_1 = vld1q_s32(cov_xy_cum + index_cum + 4);
+
+            int32x4_t var_x_cum_str_0 = vshlq_s32(vaddq_s32(var_x_cum_32x4_0, add_constant), shift_constant);
+            int32x4_t var_y_cum_str_0 = vshlq_s32(vaddq_s32(var_y_cum_32x4_0, add_constant), shift_constant);
+            int32x4_t cov_xy_cum_str_0 = vshlq_s32(vaddq_s32(cov_xy_cum_32x4_0, add_constant), shift_constant);
+            int32x4_t var_x_cum_str_1 = vshlq_s32(vaddq_s32(var_x_cum_32x4_1, add_constant), shift_constant);
+            int32x4_t var_y_cum_str_1 = vshlq_s32(vaddq_s32(var_y_cum_32x4_1, add_constant), shift_constant);
+            int32x4_t cov_xy_cum_str_1 = vshlq_s32(vaddq_s32(cov_xy_cum_32x4_1, add_constant), shift_constant);
+
+            vst1q_s32(var_x_cum + index_cum, var_x_cum_str_0);
+            vst1q_s32(var_x_cum + index_cum, var_y_cum_str_0);
+            vst1q_s32(cov_xy_cum + index_cum, cov_xy_cum_str_0);
+            vst1q_s32(var_x_cum + index_cum + 4, var_x_cum_str_1);
+            vst1q_s32(var_x_cum + index_cum + 4, var_y_cum_str_1);
+            vst1q_s32(cov_xy_cum + index_cum + 4, cov_xy_cum_str_1);
+
+            index_cum += 8;
+        }
+        for(; j < width; j++)
+        {
+            var_x_cum[index_cum] = (var_x_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            var_y_cum[index_cum] = (var_y_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            cov_xy_cum[index_cum] = (cov_xy_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            index_cum++;
+        }
+        index_cum += (cum_array_width - width);
+    }
+}

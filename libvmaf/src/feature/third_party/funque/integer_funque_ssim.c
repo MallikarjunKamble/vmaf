@@ -454,6 +454,26 @@ int integer_mean_2x2_ms_ssim_funque_c(int32_t *var_x_cum, int32_t *var_y_cum, in
     return ret;
 }
 
+int integer_ms_ssim_shift_cum_buffer_funque_c(int32_t *var_x_cum, int32_t *var_y_cum, int32_t *cov_xy_cum,
+                                              int width, int height, int level, uint8_t csf_pending_div[4],
+                                              uint8_t csf_pending_div_lp1[4])
+{
+    int cum_array_width = width * (1 << (level + 1));
+    int index_cum = 0;
+    int shift_cums = 2 * (csf_pending_div[1] - csf_pending_div_lp1[1] - 1);
+
+    for(int i = 0; i < height; i++) {
+        for(int j = 0; j < width; j++) {
+            var_x_cum[index_cum] = (var_x_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            var_y_cum[index_cum] = (var_y_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            cov_xy_cum[index_cum] = (cov_xy_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            index_cum++;
+        }
+        index_cum += (cum_array_width - width);
+    }
+    return 0;
+}
+
 int integer_compute_ms_ssim_mean_scales(MsSsimScore_int *score, int n_levels)
 {
     int ret = 1;

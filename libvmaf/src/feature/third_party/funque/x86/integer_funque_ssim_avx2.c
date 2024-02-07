@@ -876,3 +876,45 @@ int integer_mean_2x2_ms_ssim_funque_avx2(int32_t *var_x_cum, int32_t *var_y_cum,
     ret = 0;
     return ret;
 }
+
+int integer_ms_ssim_shift_cum_buffer_funque_avx2(int32_t *var_x_cum, int32_t *var_y_cum, int32_t *cov_xy_cum,
+                                                 int width, int height, int level, uint8_t csf_pending_div[4],
+                                                 uint8_t csf_pending_div_lp1[4])
+{
+    int cum_array_width = width * (1 << (level + 1));
+    int index_cum = 0;
+    int shift_cums = 2 * (csf_pending_div[1] - csf_pending_div_lp1[1] - 1);
+    int i = 0;
+    int j = 0;
+    __m256i add_constant = _mm256_set1_epi32(1 << (shift_cums - 1));
+
+    for(i = 0; i < height; i++)
+    {
+        for(j = 0; j < width - 8; j += 8)
+        {
+            __m256i var_x_cum_buf = _mm256_loadu_si256((__m256i*) (var_x_cum + index_cum));
+            __m256i var_y_cum_buf = _mm256_loadu_si256((__m256i*) (var_y_cum + index_cum));
+            __m256i cov_xy_cum_buf = _mm256_loadu_si256((__m256i*) (cov_xy_cum + index_cum));
+
+            __m256i var_x_cum_str = _mm256_srai_epi32(_mm256_add_epi32(var_x_cum_buf, add_constant), shift_cums);
+            __m256i var_y_cum_str = _mm256_srai_epi32(_mm256_add_epi32(var_y_cum_buf, add_constant), shift_cums);
+            __m256i cov_xy_cum_str = _mm256_srai_epi32(_mm256_add_epi32(cov_xy_cum_buf, add_constant), shift_cums);
+
+            _mm256_store_si256((__m256i*)(var_x_cum + index_cum), var_x_cum_str);
+            _mm256_store_si256((__m256i*)(var_y_cum + index_cum), var_y_cum_str);
+            _mm256_store_si256((__m256i*)(cov_xy_cum + index_cum), cov_xy_cum_str);
+
+            index_cum += 8;
+        }
+        for(; j < width; j++)
+        {
+            var_x_cum[index_cum] = (var_x_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            var_y_cum[index_cum] = (var_y_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            cov_xy_cum[index_cum] = (cov_xy_cum[index_cum] + (1 << (shift_cums - 1))) >> shift_cums;
+            index_cum++;
+        }
+        index_cum += (cum_array_width - width);
+    }
+
+    return 0;
+}
