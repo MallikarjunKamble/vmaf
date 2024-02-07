@@ -1039,7 +1039,7 @@ static int extract(VmafFeatureExtractor *fex,
     }
 #endif
 
-    double ssim_score[MAX_LEVELS];
+    SsimScore_int ssim_score[MAX_LEVELS];
     MsSsimScore_int ms_ssim_score[MAX_LEVELS];
     double motion_score[MAX_LEVELS];
     double mad_score[MAX_LEVELS];
@@ -1420,23 +1420,39 @@ static int extract(VmafFeatureExtractor *fex,
 
     if(s->ssim_levels > 0) {
         err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                       "FUNQUE_integer_feature_ssim_scale0_score",
-                                                       ssim_score[0], index);
+                                                       "FUNQUE_integer_feature_ssim_mean_scale0_score",
+                                                       ssim_score[0].mean, index);
+
+        err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
+                                                       "FUNQUE_integer_feature_ssim_mink3_scale0_score",
+                                                       ssim_score[0].mink3, index);
 
         if(s->ssim_levels > 1) {
             err |= vmaf_feature_collector_append_with_dict(
-                feature_collector, s->feature_name_dict, "FUNQUE_integer_feature_ssim_scale1_score",
-                ssim_score[1], index);
+                feature_collector, s->feature_name_dict, "FUNQUE_integer_feature_ssim_mean_scale1_score",
+                ssim_score[1].mean, index);
+
+            err |= vmaf_feature_collector_append_with_dict(
+                feature_collector, s->feature_name_dict, "FUNQUE_integer_feature_ssim_mink3_scale1_score",
+                ssim_score[1].mink3, index);
 
             if(s->ssim_levels > 2) {
                 err |= vmaf_feature_collector_append_with_dict(
                     feature_collector, s->feature_name_dict,
-                    "FUNQUE_integer_feature_ssim_scale2_score", ssim_score[2], index);
+                    "FUNQUE_integer_feature_ssim_mean_scale2_score", ssim_score[2].mean, index);
+
+                err |= vmaf_feature_collector_append_with_dict(
+                    feature_collector, s->feature_name_dict,
+                    "FUNQUE_integer_feature_ssim_mink3_scale2_score", ssim_score[2].mink3, index);
 
                 if(s->ssim_levels > 3) {
                     err |= vmaf_feature_collector_append_with_dict(
                         feature_collector, s->feature_name_dict,
-                        "FUNQUE_integer_feature_ssim_scale3_score", ssim_score[3], index);
+                        "FUNQUE_integer_feature_ssim_mean_scale3_score", ssim_score[3].mean, index);
+
+                    err |= vmaf_feature_collector_append_with_dict(
+                        feature_collector, s->feature_name_dict,
+                        "FUNQUE_integer_feature_ssim_mink3_scale3_score", ssim_score[3].mink3, index);
                 }
             }
         }
@@ -1639,10 +1655,14 @@ static const char *provided_features[] = {"FUNQUE_integer_feature_vif_score",
                                           "FUNQUE_integer_feature_adm_scale2_score",
                                           "FUNQUE_integer_feature_adm_scale3_score",
 
-                                          "FUNQUE_integer_feature_ssim_scale0_score",
-                                          "FUNQUE_integer_feature_ssim_scale1_score",
-                                          "FUNQUE_integer_feature_ssim_scale2_score",
-                                          "FUNQUE_integer_feature_ssim_scale3_score",
+                                          "FUNQUE_integer_feature_ssim_mean_scale0_score",
+                                          "FUNQUE_integer_feature_ssim_mean_scale1_score",
+                                          "FUNQUE_integer_feature_ssim_mean_scale2_score",
+                                          "FUNQUE_integer_feature_ssim_mean_scale3_score",
+                                          "FUNQUE_integer_feature_ssim_mink3_scale0_score",
+                                          "FUNQUE_integer_feature_ssim_mink3_scale1_score",
+                                          "FUNQUE_integer_feature_ssim_mink3_scale2_score",
+                                          "FUNQUE_integer_feature_ssim_mink3_scale3_score",
 
                                           "FUNQUE_integer_feature_strred_scale0_score",
                                           "FUNQUE_integer_feature_strred_scale1_score",

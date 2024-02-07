@@ -25,7 +25,7 @@
         r_32x8_hi = _mm256_cvtepi16_epi32(_mm256_extracti128_si256(a_16x16, 1)); \
     }
 
-int integer_compute_ssim_funque_avx2(i_dwt2buffers *ref, i_dwt2buffers *dist, double *score,
+int integer_compute_ssim_funque_avx2(i_dwt2buffers *ref, i_dwt2buffers *dist, SsimScore_int *score,
                                      int max_val, float K1, float K2, int pending_div,
                                      int32_t *div_lookup);
 int integer_compute_ms_ssim_funque_avx2(i_dwt2buffers *ref, i_dwt2buffers *dist,
