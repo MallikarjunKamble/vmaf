@@ -1176,7 +1176,7 @@ static int extract(VmafFeatureExtractor *fex,
     for(int level = 0; level < s->needed_dwt_levels; level++) {
         // TODO: Need to modify for crop width and height
         if((s->adm_levels != 0) && (level <= s->adm_levels - 1)) {
-            float adm_pending_div = pending_div_factor;
+            float adm_pending_div = (float) (((int) pending_div_factor) >> (level));
             if(!s->enable_spatial_csf)
                 adm_pending_div = (1 << (s->csf_pending_div[level][1])) * bitdepth_pow2;
 
