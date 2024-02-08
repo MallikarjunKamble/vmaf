@@ -17,7 +17,7 @@
  */
 
 #include <stdint.h>
-
+#include <string.h>
 #include <libvmaf/picture.h>
 
 #include "funque_filters.h"

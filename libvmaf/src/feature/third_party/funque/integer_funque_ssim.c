@@ -201,8 +201,12 @@ int integer_compute_ms_ssim_funque_c(i_dwt2buffers *ref, i_dwt2buffers *dist,
                                      int pending_div_c1, int pending_div_c2, int pending_div_offset, 
                                      int pending_div_halfround, int32_t *div_lookup, int n_levels, int is_pyr)
 {
-    int ret = 1;
+#if BAND_HVD_SAME_PENDING_DIV
+    UNUSED(pending_div_halfround);
+    UNUSED(pending_div_offset);
+#endif
 
+    int ret = 1;
     int cum_array_width = (ref->width) * (1 << n_levels);
     // int win_dim = (1 << n_levels);          // 2^L
     int win_size = (n_levels << 1);
@@ -486,7 +490,6 @@ int integer_compute_ms_ssim_mean_scales(MsSsimScore_int *score, int n_levels)
 
     double cum_prod_mink3[5] = {0};
     double cum_prod_concat_mink3[5] = {0};
-    double ms_ssim_mink3_scales[5] = {0};
 
     float sign_cum_prod_mean = (score[0].cs_mean) >= 0 ? 1 : -1;
     float sign_cum_prod_cov = (score[0].cs_cov) >= 0 ? 1 : -1;
