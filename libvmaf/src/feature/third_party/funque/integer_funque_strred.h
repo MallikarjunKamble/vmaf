@@ -26,6 +26,7 @@
 #define TWO_POWER_Q_FACTOR (1 << STRRED_Q_FORMAT)
 
 #define LOGE_BASE2 1.442684682
+#define USE_LOG22 0
 
 int integer_compute_srred_funque_c(const struct i_dwt2buffers *ref,
                                    const struct i_dwt2buffers *dist, size_t width, size_t height,
@@ -76,6 +77,30 @@ FORCE_INLINE inline uint32_t strred_get_best_u22_from_u64(uint64_t temp, int *x)
     } else {
         *x = 0;
         if(temp >> 22) {
+            temp = temp >> 1;
+            *x = 1;
+        }
+    }
+
+    return (uint32_t) temp;
+}
+
+FORCE_INLINE inline uint32_t strred_get_best_u18_from_u64(uint64_t temp, int *x)
+{
+    int k = __builtin_clzll(temp);
+
+    if(k > 46) {
+        k -= 46;
+        temp = temp << k;
+        *x = -k;
+
+    } else if(k < 45) {
+        k = 46 - k;
+        temp = (temp + (1 << (k - 1))) >> k;
+        *x = k;
+    } else {
+        *x = 0;
+        if(temp >> 18) {
             temp = temp >> 1;
             *x = 1;
         }
@@ -143,6 +168,7 @@ static inline float strred_horz_integralsum_spatial_csf(
         var_x = (var_x < 0) ? 0 : var_x;
         var_y = (var_y < 0) ? 0 : var_y;
 
+#if USE_LOG22
         mul_x = (uint64_t) (var_x + sigma_nsq);
         mul_y = (uint64_t) (var_y + sigma_nsq);
         e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
@@ -156,6 +182,21 @@ static inline float strred_horz_integralsum_spatial_csf(
         s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#else
+        mul_x = (uint64_t) (var_x + sigma_nsq);
+        mul_y = (uint64_t) (var_y + sigma_nsq);
+        e_look_x = strred_get_best_u18_from_u64((uint64_t) mul_x, &ex);
+        e_look_y = strred_get_best_u18_from_u64((uint64_t) mul_y, &ey);
+        entropy_x = log_18[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
+        entropy_y = log_18[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
+
+        add_x = (uint64_t) (var_x + const_val);
+        add_y = (uint64_t) (var_y + const_val);
+        s_look_x = strred_get_best_u18_from_u64((uint64_t) add_x, &sx);
+        s_look_y = strred_get_best_u18_from_u64((uint64_t) add_y, &sy);
+        scale_x = log_18[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
+        scale_y = log_18[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#endif
 
         entropy_x = entropy_x - sub_val;
         entropy_y = entropy_y - sub_val;
@@ -201,6 +242,7 @@ static inline float strred_horz_integralsum_spatial_csf(
         var_x = (var_x < 0) ? 0 : var_x;
         var_y = (var_y < 0) ? 0 : var_y;
 
+#if USE_LOG22
         mul_x = (uint64_t) (var_x + sigma_nsq);
         mul_y = (uint64_t) (var_y + sigma_nsq);
         e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
@@ -214,6 +256,21 @@ static inline float strred_horz_integralsum_spatial_csf(
         s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#else
+        mul_x = (uint64_t) (var_x + sigma_nsq);
+        mul_y = (uint64_t) (var_y + sigma_nsq);
+        e_look_x = strred_get_best_u18_from_u64((uint64_t) mul_x, &ex);
+        e_look_y = strred_get_best_u18_from_u64((uint64_t) mul_y, &ey);
+        entropy_x = log_18[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
+        entropy_y = log_18[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
+
+        add_x = (uint64_t) (var_x + const_val);
+        add_y = (uint64_t) (var_y + const_val);
+        s_look_x = strred_get_best_u18_from_u64((uint64_t) add_x, &sx);
+        s_look_y = strred_get_best_u18_from_u64((uint64_t) add_y, &sy);
+        scale_x = log_18[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
+        scale_y = log_18[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#endif
 
         entropy_x = entropy_x - sub_val;
         entropy_y = entropy_y - sub_val;
@@ -296,6 +353,7 @@ static inline float strred_horz_integralsum_wavelet(
         var_x = (var_x < 0) ? 0 : var_x;
         var_y = (var_y < 0) ? 0 : var_y;
 
+#if USE_LOG22
         mul_x = (uint64_t) (var_x + sigma_nsq);
         mul_y = (uint64_t) (var_y + sigma_nsq);
         e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
@@ -309,6 +367,21 @@ static inline float strred_horz_integralsum_wavelet(
         s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#else
+        mul_x = (uint64_t) (var_x + sigma_nsq);
+        mul_y = (uint64_t) (var_y + sigma_nsq);
+        e_look_x = strred_get_best_u18_from_u64((uint64_t) mul_x, &ex);
+        e_look_y = strred_get_best_u18_from_u64((uint64_t) mul_y, &ey);
+        entropy_x = log_18[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
+        entropy_y = log_18[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
+
+        add_x = (uint64_t) (var_x + const_val);
+        add_y = (uint64_t) (var_y + const_val);
+        s_look_x = strred_get_best_u18_from_u64((uint64_t) add_x, &sx);
+        s_look_y = strred_get_best_u18_from_u64((uint64_t) add_y, &sy);
+        scale_x = log_18[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
+        scale_y = log_18[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#endif
 
         entropy_x = entropy_x - sub_val;
         entropy_y = entropy_y - sub_val;
@@ -354,6 +427,7 @@ static inline float strred_horz_integralsum_wavelet(
         var_x = (var_x < 0) ? 0 : var_x;
         var_y = (var_y < 0) ? 0 : var_y;
 
+#if USE_LOG22
         mul_x = (uint64_t) (var_x + sigma_nsq);
         mul_y = (uint64_t) (var_y + sigma_nsq);
         e_look_x = strred_get_best_u22_from_u64((uint64_t) mul_x, &ex);
@@ -367,6 +441,21 @@ static inline float strred_horz_integralsum_wavelet(
         s_look_y = strred_get_best_u22_from_u64((uint64_t) add_y, &sy);
         scale_x = log_22[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
         scale_y = log_22[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#else
+        mul_x = (uint64_t) (var_x + sigma_nsq);
+        mul_y = (uint64_t) (var_y + sigma_nsq);
+        e_look_x = strred_get_best_u18_from_u64((uint64_t) mul_x, &ex);
+        e_look_y = strred_get_best_u18_from_u64((uint64_t) mul_y, &ey);
+        entropy_x = log_18[e_look_x] + (ex * TWO_POWER_Q_FACTOR) + entr_const;
+        entropy_y = log_18[e_look_y] + (ey * TWO_POWER_Q_FACTOR) + entr_const;
+
+        add_x = (uint64_t) (var_x + const_val);
+        add_y = (uint64_t) (var_y + const_val);
+        s_look_x = strred_get_best_u18_from_u64((uint64_t) add_x, &sx);
+        s_look_y = strred_get_best_u18_from_u64((uint64_t) add_y, &sy);
+        scale_x = log_18[s_look_x] + (sx * TWO_POWER_Q_FACTOR);
+        scale_y = log_18[s_look_y] + (sy * TWO_POWER_Q_FACTOR);
+#endif
 
         entropy_x = entropy_x - sub_val;
         entropy_y = entropy_y - sub_val;
