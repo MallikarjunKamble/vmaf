@@ -118,7 +118,7 @@ static inline float strred_horz_integralsum_spatial_csf(
     float aggregate = 0;
 
     int32_t pending_div_minus_var_fac = pending_div_fac - VARIANCE_SHIFT_FACTOR;
-    int64_t div_fac = (int64_t) (1 << pending_div_minus_var_fac) * 255 * 255 * 81;
+    int64_t div_fac = (int64_t) (1 << pending_div_minus_var_fac) * 255 * 255 * 81 * 0.1;
     uint64_t sigma_nsq = div_fac * sigma_nsq_arg;
     uint64_t const_val = div_fac;
     int64_t sub_val =
@@ -271,7 +271,7 @@ static inline float strred_horz_integralsum_wavelet(
     float aggregate = 0;
 
     int32_t pending_div_minus_var_fac = pending_div_fac - VARIANCE_SHIFT_FACTOR;
-    int64_t div_fac = (int64_t) (1 << pending_div_minus_var_fac) * 255 * 255 * 81;
+    int64_t div_fac = (int64_t) (1 << pending_div_minus_var_fac) * 255 * 255 * 81 * 0.1;
     uint64_t sigma_nsq = div_fac * sigma_nsq_arg;
     uint64_t const_val = div_fac;
     int64_t sub_val =

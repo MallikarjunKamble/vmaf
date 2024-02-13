@@ -1073,8 +1073,6 @@ static int extract(VmafFeatureExtractor *fex,
     double vif_den = 0.0;
     double vif_num = 0.0;
 
-    double motion = 0.0;
-
     int16_t spatfilter_shifts = 2 * SPAT_FILTER_COEFF_SHIFT - SPAT_FILTER_INTER_SHIFT - SPAT_FILTER_OUT_SHIFT - (res_ref_pic->bpc - 8);
     int16_t dwt_shifts = 2 * DWT2_COEFF_UPSHIFT - DWT2_INTER_SHIFT - DWT2_OUT_SHIFT;
     float pending_div_factor = (1 << ( spatfilter_shifts + dwt_shifts)) * bitdepth_pow2;
@@ -1346,8 +1344,6 @@ static int extract(VmafFeatureExtractor *fex,
                 err |= s->modules.integer_compute_motion_funque(s->i_prev_ref[level].bands[0], s->i_ref_dwt2out[level].bands[0], 
                                 s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, 
                                 s->i_prev_ref[level].stride, s->i_ref_dwt2out[level].stride, motion_pending_div, &motion_score[level]);
-
-                motion += motion_score[level];
             }
         }
     }
@@ -1461,12 +1457,6 @@ static int extract(VmafFeatureExtractor *fex,
     }
 
     if(s->motion_levels > 0) {
-        double motion_avg = motion / s->motion_levels;
-
-        err |=
-            vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
-                                                    "FUNQUE_integer_feature_motion_score", motion_avg, index);
-
         err |= vmaf_feature_collector_append_with_dict(feature_collector, s->feature_name_dict,
                                                        "FUNQUE_integer_feature_motion_scale0_score",
                                                        motion_score[0], index);
