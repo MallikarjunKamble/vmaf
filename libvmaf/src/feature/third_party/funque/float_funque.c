@@ -858,12 +858,13 @@ static int extract(VmafFeatureExtractor *fex,
 
         if((s->motion_levels != 0) && (level <= s->motion_levels - 1)) {
             if(index != 0) {
-                
                 err |= compute_motion_funque(s->prev_ref[level].bands[0], s->ref_dwt2out[level].bands[0], 
                                 s->ref_dwt2out[level].width, s->ref_dwt2out[level].height, 
                                 s->prev_ref[level].stride, s->ref_dwt2out[level].stride, &motion_score[level]);
             }
+        }
 
+        if((s->mad_levels != 0) && (level <= s->mad_levels - 1)) {
             err |= compute_mad_funque(s->ref_dwt2out[level].bands[0], s->dist_dwt2out[level].bands[0],
                                 s->ref_dwt2out[level].width, s->ref_dwt2out[level].height, 
                                 s->prev_ref[level].stride, s->ref_dwt2out[level].stride, &mad_score[level]);

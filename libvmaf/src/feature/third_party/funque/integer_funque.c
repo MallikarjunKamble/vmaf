@@ -1050,7 +1050,6 @@ static int extract(VmafFeatureExtractor *fex,
     MsSsimScore_int ms_ssim_score[MAX_LEVELS];
     double motion_score[MAX_LEVELS];
     double mad_score[MAX_LEVELS];
-    // s->score = &ms_ssim_score;
     s->score = ms_ssim_score;
     double adm_score[MAX_LEVELS], adm_score_num[MAX_LEVELS], adm_score_den[MAX_LEVELS];
     double vif_score[MAX_LEVELS], vif_score_num[MAX_LEVELS], vif_score_den[MAX_LEVELS];
@@ -1282,13 +1281,12 @@ static int extract(VmafFeatureExtractor *fex,
         }
 
         if((s->mad_levels != 0) && (level <= s->mad_levels - 1)) {
-            float motion_pending_div = spatfilter_shifts + dwt_shifts - level;
-            if(!s->enable_spatial_csf)
-                motion_pending_div = s->csf_pending_div[level][0];
+            int mad_pending_div = (s->enable_spatial_csf) ? (spatfilter_shifts + dwt_shifts - level) :
+                                    s->csf_pending_div[level][0];
 
             err |= s->modules.integer_compute_mad_funque(s->i_ref_dwt2out[level].bands[0], s->i_dist_dwt2out[level].bands[0],
                                 s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, 
-                                s->i_prev_ref[level].stride, s->i_ref_dwt2out[level].stride, motion_pending_div, &mad_score[level]);
+                                s->i_prev_ref[level].stride, s->i_ref_dwt2out[level].stride, mad_pending_div, &mad_score[level]);
             if(err)
                 return err;
         }
@@ -1333,9 +1331,8 @@ static int extract(VmafFeatureExtractor *fex,
         }
 
         if((s->motion_levels != 0) && (level <= s->motion_levels - 1)) {
-            float motion_pending_div = spatfilter_shifts + dwt_shifts - level;
-            if(!s->enable_spatial_csf)
-                motion_pending_div = s->csf_pending_div[level][0];
+            int motion_pending_div = (s->enable_spatial_csf) ? (spatfilter_shifts + dwt_shifts - level) :
+                                        s->csf_pending_div[level][0];
 
             if(index != 0) {
                 err |= s->modules.integer_compute_motion_funque(s->i_prev_ref[level].bands[0], s->i_ref_dwt2out[level].bands[0], 
@@ -1665,7 +1662,6 @@ static const char *provided_features[] = {
     "FUNQUE_integer_feature_strred_scale2_score",
     "FUNQUE_integer_feature_strred_scale3_score",
 
-    "FUNQUE_integer_feature_motion_score",
     "FUNQUE_integer_feature_motion_scale0_score",
     "FUNQUE_integer_feature_motion_scale1_score",
     "FUNQUE_integer_feature_motion_scale2_score",
