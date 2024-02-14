@@ -137,8 +137,7 @@ typedef struct IntFunqueState
     // VIF extra variables
     double vif_enhn_gain_limit;
     double vif_kernelscale;
-    uint32_t log_18[262144];
-    uint32_t log_lut[TWO_POW_STRRED_LUT];
+    uint32_t log_lut[TWO_POW_BITS_USED];
 
     // ADM extra variables
     double adm_enhn_gain_limit;
@@ -852,10 +851,8 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
 #endif
 #endif
 
-    // funque_log_generate(s->log_18);
     div_lookup_generator(s->adm_div_lookup);
-    strred_funque_log_generate(s->log_18);
-    strred_funque_generate_log22(s->log_lut);
+    funque_log_generate(s->log_lut);
 
     return 0;
 
@@ -1256,13 +1253,13 @@ static int extract(VmafFeatureExtractor *fex,
                 s->i_ref_dwt2out[level].bands[0], s->i_dist_dwt2out[level].bands[0],
                 s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, &vif_score[level],
                 &vif_score_num[level], &vif_score_den[level], 9, 1, (double) 5.0, vif_pending_div,
-                s->log_18, 0);
+                s->log_lut, 0);
 #else
             err = s->modules.integer_compute_vif_funque(
                 s->i_ref_dwt2out[level].bands[0], s->i_dist_dwt2out[level].bands[0],
                 s->i_ref_dwt2out[level].width, s->i_ref_dwt2out[level].height, &vif_score[level],
                 &vif_score_num[level], &vif_score_den[level], 9, 1, (double) 5.0, vif_pending_div,
-                s->log_18);
+                s->log_lut);
 #endif
             vif_num += vif_score_num[level];
             vif_den += vif_score_den[level];

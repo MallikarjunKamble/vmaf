@@ -22,11 +22,8 @@
 #define STRRED_REFLECT_PAD 1
 
 #define VARIANCE_SHIFT_FACTOR 6
-#define STRRED_Q_FORMAT 26
 #define TWO_POWER_Q_FACTOR (1 << STRRED_Q_FORMAT)
 
-#define BITS_USED_FOR_STRRED_LUT 28
-#define TWO_POW_STRRED_LUT (1 << BITS_USED_FOR_STRRED_LUT)
 #define LOGE_BASE2 1.442684682
 
 int integer_compute_srred_funque_c(const struct i_dwt2buffers *ref,
@@ -59,13 +56,12 @@ void integer_subract_subbands_c(const dwt2_dtype *ref_src, const dwt2_dtype *ref
 void strred_integer_reflect_pad(const dwt2_dtype *src, size_t width, size_t height, int reflect,
                                 dwt2_dtype *dest);
 
-void strred_funque_generate_log22(uint32_t *log_lut);
-void strred_funque_log_generate(uint32_t *log_18);
+void funque_log_generate(uint32_t *log_lut);
 
 FORCE_INLINE inline uint32_t strred_get_best_bits_from_u64(uint64_t temp, int *x)
 {
     int k = __builtin_clzll(temp);
-    int best_bits = 64 - BITS_USED_FOR_STRRED_LUT;
+    int best_bits = 64 - BITS_USED_BY_VIF_AND_STRRED_LUT;
 
     if(k > best_bits) {
         k -= best_bits;
@@ -78,7 +74,7 @@ FORCE_INLINE inline uint32_t strred_get_best_bits_from_u64(uint64_t temp, int *x
         *x = k;
     } else {
         *x = 0;
-        if(temp >> BITS_USED_FOR_STRRED_LUT) {
+        if(temp >> BITS_USED_BY_VIF_AND_STRRED_LUT) {
             temp = temp >> 1;
             *x = 1;
         }

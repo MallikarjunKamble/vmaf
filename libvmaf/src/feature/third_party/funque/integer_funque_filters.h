@@ -84,6 +84,10 @@ typedef uint64_t ssim_mink3_accum_dtype;
 #define CS_MINK3_ROW_R_SHIFT 7
 #define SSIM_MINK3_ROW_R_SHIFT 10
 
+#define STRRED_Q_FORMAT 26
+#define BITS_USED_BY_VIF_AND_STRRED_LUT 22
+#define TWO_POW_BITS_USED (1 << BITS_USED_BY_VIF_AND_STRRED_LUT)
+
 typedef struct i_dwt2buffers {
     dwt2_dtype *bands[4];
     int width;
@@ -166,13 +170,13 @@ typedef struct ModuleFunqueState
                                            size_t width, size_t height, 
                                            double* score, double* score_num, double* score_den, 
                                            int k, int stride, double sigma_nsq_arg, 
-                                           int64_t shift_val, uint32_t* log_18, int vif_level);
+                                           int64_t shift_val, uint32_t* log_lut, int vif_level);
 #else
     int (*integer_compute_vif_funque)(const dwt2_dtype* x_t, const dwt2_dtype* y_t, 
                                            size_t width, size_t height, 
                                            double* score, double* score_num, double* score_den, 
                                            int k, int stride, double sigma_nsq_arg, 
-                                           int64_t shift_val, uint32_t* log_18);
+                                           int64_t shift_val, uint32_t* log_lut);
 #endif
     // void (*resizer_step)(const unsigned char *_src, unsigned char *_dst, const int *xofs, const int *yofs, const short *_alpha, const short *_beta, int iwidth, int iheight, int dwidth, int dheight, int channels, int ksize, int start, int end, int xmin, int xmax);
 
@@ -352,6 +356,8 @@ static const uint8_t i_mannos_weight_pending_div_factors[4][4] = {
     {4, 5, 5, 5},  // L2
     {3, 4, 4, 4},  // L3
 };
+
+void funque_log_generate(uint32_t *log_lut);
 
 void integer_spatial_filter_c(void *src, spat_fil_output_dtype *dst, int dst_stride, int width,
                               int height, int bitdepth, spat_fil_inter_dtype *tmp,

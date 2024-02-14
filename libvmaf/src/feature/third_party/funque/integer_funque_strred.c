@@ -27,26 +27,6 @@
 #include "common/macros.h"
 #include "integer_funque_strred.h"
 
-// just change the store offset to reduce multiple calculation when getting log2f value
-void strred_funque_log_generate(uint32_t *log_18)
-{
-    uint64_t i;
-    uint64_t start = (unsigned int) pow(2, 17);
-    uint64_t end = (unsigned int) pow(2, 18);
-    for(i = start; i < end; i++) {
-        log_18[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
-    }
-}
-
-void strred_funque_generate_log22(uint32_t *log_lut)
-{
-    uint64_t i;
-    uint64_t start = (unsigned int) pow(2, (BITS_USED_FOR_STRRED_LUT - 1));
-    uint64_t end = (unsigned int) pow(2, BITS_USED_FOR_STRRED_LUT);
-    for(i = start; i < end; i++) {
-        log_lut[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
-    }
-}
 
 void strred_integer_reflect_pad(const dwt2_dtype *src, size_t width, size_t height, int reflect,
                                 dwt2_dtype *dest)
