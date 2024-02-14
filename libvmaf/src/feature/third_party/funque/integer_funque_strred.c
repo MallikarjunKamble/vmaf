@@ -41,8 +41,8 @@ void strred_funque_log_generate(uint32_t *log_18)
 void strred_funque_generate_log22(uint32_t *log_22)
 {
     uint64_t i;
-    uint64_t start = (unsigned int) pow(2, 21);
-    uint64_t end = (unsigned int) pow(2, 22);
+    uint64_t start = (unsigned int) pow(2, (BITS_USED_FOR_STRRED_LUT - 1));
+    uint64_t end = (unsigned int) pow(2, BITS_USED_FOR_STRRED_LUT);
     for(i = start; i < end; i++) {
         log_22[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
     }

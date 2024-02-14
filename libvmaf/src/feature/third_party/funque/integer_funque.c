@@ -138,7 +138,7 @@ typedef struct IntFunqueState
     double vif_enhn_gain_limit;
     double vif_kernelscale;
     uint32_t log_18[262144];
-    uint32_t log_22[4194304];
+    uint32_t log_22[TWO_POW_STRRED_LUT];
 
     // ADM extra variables
     double adm_enhn_gain_limit;
