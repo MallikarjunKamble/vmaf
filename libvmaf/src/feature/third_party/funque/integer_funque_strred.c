@@ -38,13 +38,13 @@ void strred_funque_log_generate(uint32_t *log_18)
     }
 }
 
-void strred_funque_generate_log22(uint32_t *log_22)
+void strred_funque_generate_log22(uint32_t *log_lut)
 {
     uint64_t i;
     uint64_t start = (unsigned int) pow(2, (BITS_USED_FOR_STRRED_LUT - 1));
     uint64_t end = (unsigned int) pow(2, BITS_USED_FOR_STRRED_LUT);
     for(i = start; i < end; i++) {
-        log_22[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
+        log_lut[i] = (uint32_t) round(log2((double) i) * (1 << STRRED_Q_FORMAT));
     }
 }
 
@@ -121,7 +121,7 @@ int integer_compute_srred_funque_c(const struct i_dwt2buffers *ref,
                                    const struct i_dwt2buffers *dist, size_t width, size_t height,
                                    float **spat_scales_ref, float **spat_scales_dist,
                                    struct strred_results *strred_scores, int block_size, int level,
-                                   uint32_t *log_18, uint32_t *log_22, int32_t shift_val_arg,
+                                   uint32_t *log_lut, int32_t shift_val_arg,
                                    double sigma_nsq_t, uint8_t check_enable_spatial_csf, uint8_t csf_pending_div[4])
 {
     int ret;
@@ -142,7 +142,7 @@ int integer_compute_srred_funque_c(const struct i_dwt2buffers *ref,
             shift_val = 2 * csf_pending_div[subband];
         }
         spat_values[subband] = integer_rred_entropies_and_scales(
-            ref->bands[subband], dist->bands[subband], width, height, log_18, log_22, sigma_nsq_t,
+            ref->bands[subband], dist->bands[subband], width, height, log_lut, sigma_nsq_t,
             shift_val, enable_temp, spat_scales_ref[subband], spat_scales_dist[subband],
             check_enable_spatial_csf);
         fspat_val[subband] = spat_values[subband] / (width * height);
@@ -168,7 +168,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                     struct i_dwt2buffers *prev_ref, struct i_dwt2buffers *prev_dist,
                                     size_t width, size_t height, float **spat_scales_ref,
                                     float **spat_scales_dist, struct strred_results *strred_scores,
-                                    int block_size, int level, uint32_t *log_18, uint32_t *log_22,
+                                    int block_size, int level, uint32_t *log_lut,
                                     int32_t shift_val_arg, double sigma_nsq_t,
                                     uint8_t check_enable_spatial_csf, uint8_t csf_pending_div[4])
 {
@@ -197,7 +197,7 @@ int integer_compute_strred_funque_c(const struct i_dwt2buffers *ref,
                                        dist->bands[subband], prev_dist->bands[subband],
                                        dist_temporal, width, height);
             temp_values[subband] = integer_rred_entropies_and_scales(
-                ref_temporal, dist_temporal, width, height, log_18, log_22, sigma_nsq_t, shift_val,
+                ref_temporal, dist_temporal, width, height, log_lut, sigma_nsq_t, shift_val,
                 enable_temp, spat_scales_ref[subband], spat_scales_dist[subband],
                 check_enable_spatial_csf);
             ftemp_val[subband] = temp_values[subband] / (width * height);

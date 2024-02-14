@@ -216,7 +216,7 @@ int compute_srred_funque(const struct dwt2buffers* ref, const struct dwt2buffers
     strred_scores->spat_vals[level] = (spat_values[1] + spat_values[2] + spat_values[3]) / 3;
 
     // Add equations to compute S-RRED using norm factors
-    int norm_factor, num_level;
+    int norm_factor = 1, num_level;
     for(num_level = 0; num_level <= level; num_level++)
         norm_factor = num_level + 1;
 
@@ -300,7 +300,7 @@ int compute_strred_funque(const struct dwt2buffers* ref, const struct dwt2buffer
         strred_scores->spat_vals[level] * strred_scores->temp_vals[level];
 
     // Add equations to compute ST-RRED using norm factors
-    int norm_factor, num_level;
+    int norm_factor = 1, num_level;
     for(num_level = 0; num_level <= level; num_level++)
         norm_factor = num_level + 1;
 

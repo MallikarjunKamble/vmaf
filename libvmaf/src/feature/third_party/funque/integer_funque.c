@@ -138,7 +138,7 @@ typedef struct IntFunqueState
     double vif_enhn_gain_limit;
     double vif_kernelscale;
     uint32_t log_18[262144];
-    uint32_t log_22[TWO_POW_STRRED_LUT];
+    uint32_t log_lut[TWO_POW_STRRED_LUT];
 
     // ADM extra variables
     double adm_enhn_gain_limit;
@@ -855,7 +855,7 @@ static int init(VmafFeatureExtractor *fex, enum VmafPixelFormat pix_fmt,
     // funque_log_generate(s->log_18);
     div_lookup_generator(s->adm_div_lookup);
     strred_funque_log_generate(s->log_18);
-    strred_funque_generate_log22(s->log_22);
+    strred_funque_generate_log22(s->log_lut);
 
     return 0;
 
@@ -1277,7 +1277,7 @@ static int extract(VmafFeatureExtractor *fex,
             err |= s->modules.integer_compute_srred_funque(
                 &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], s->i_ref_dwt2out[level].width,
                 s->i_ref_dwt2out[level].height, spat_scales_ref[level], spat_scales_dist[level],
-                &s->strred_scores, BLOCK_SIZE, level, s->log_18, s->log_22, strred_pending_div,
+                &s->strred_scores, BLOCK_SIZE, level, s->log_lut, strred_pending_div,
                 (double) 0.1, s->enable_spatial_csf, s->csf_pending_div[level]);
 
             if(err)
@@ -1328,7 +1328,7 @@ static int extract(VmafFeatureExtractor *fex,
                     &s->i_ref_dwt2out[level], &s->i_dist_dwt2out[level], &s->i_prev_ref[level],
                     &s->i_prev_dist[level], s->i_ref_dwt2out[level].width,
                     s->i_ref_dwt2out[level].height, spat_scales_ref[level], spat_scales_dist[level],
-                    &s->strred_scores, BLOCK_SIZE, level, s->log_18, s->log_22, strred_pending_div,
+                    &s->strred_scores, BLOCK_SIZE, level, s->log_lut, strred_pending_div,
                     (double) 0.1, s->enable_spatial_csf, s->csf_pending_div[level]);
             }
             if(err)
