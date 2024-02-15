@@ -249,7 +249,7 @@ static const spat_fil_coeff_dtype i_li_coeffs[4][4] = {
 };
 
 static const uint8_t i_li_interim_shift[4][4] = {
-    {9, 12, 17, 12},
+    {9, 12, 16, 12},
     {11, 12, 14, 12},
     {13, 13, 14, 13},
     {13, 13, 13, 13}
@@ -340,7 +340,7 @@ static const spat_fil_coeff_dtype i_mannos_weight_coeffs[4][4] = {
 
 static const uint8_t i_mannos_weight_interim_shift[4][4] = {
     {9, 12, 17, 12},
-    {12, 12, 14, 12},
+    {11, 12, 14, 12},
     {13, 13, 14, 13},
     {13, 13, 13, 13}
 };
